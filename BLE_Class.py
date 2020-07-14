@@ -42,17 +42,11 @@ _SERVER_ADDR = b'$b\xab\xf9\x0bR'
 _CLIENT_ADDR = b'$b\xab\xf9\x17\xd6'
 #_WW_MAC_ADDR = b'\x78\x4f\x43\x54\xf5\x00'
 
-#do gap stuff (advertise to connect, etc)
-#check for events until you get a connection
+#attribute indicators
+BLE_ATTR_STATUS = const(0)
+BLE_ATTR_SPEED = const(1)
+BLE_ATTR_DIREX = const(2)
 
-# HR_UUID = ubluetooth.UUID(0x180D)
-# HR_CHAR = (ubluetooth.UUID(0x2A37), ubluetooth.FLAG_READ | ubluetooth.FLAG_NOTIFY,)
-# HR_SERVICE = (HR_UUID, (HR_CHAR,),)
-
-# UART_UUID = ubluetooth.UUID('6E400001-B5A3-F393-E0A9-E50E24DCCA9E')
-# UART_TX = (ubluetooth.UUID('6E400003-B5A3-F393-E0A9-E50E24DCCA9E'), ubluetooth.FLAG_READ | ubluetooth.FLAG_NOTIFY,)
-# UART_RX = (ubluetooth.UUID('6E400002-B5A3-F393-E0A9-E50E24DCCA9E'), ubluetooth.FLAG_WRITE,)
-# UART_SERVICE = (UART_UUID, (UART_TX, UART_RX,),)
 
 CUSTOM_DESIRED_SPEED_SERVICE_UUID = ubluetooth.UUID('1ab35ef6-b76b-11ea-b3de-0242ac130004')
 STATUS_UUID = ubluetooth.UUID('dac11e24-ba93-11ea-b3de-0242ac130004')
@@ -63,7 +57,6 @@ DIREX_UUID = ubluetooth.UUID('c6f75c74-ba88-11ea-b3de-0242ac130004')
 CUSTOM_DESIRED_DIREX_CHAR = (DIREX_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
 CUSTOM_DESIRED_SPEED_SERVICE = (CUSTOM_DESIRED_SPEED_SERVICE_UUID, (CUSTOM_STATUS_CHAR, CUSTOM_DESIRED_SPEED_CHAR, CUSTOM_DESIRED_DIREX_CHAR,),)
 SERVICE_LIST = (CUSTOM_DESIRED_SPEED_SERVICE,)
-
 
 class mc_BLE:
 
@@ -77,12 +70,15 @@ class mc_BLE:
 		self.is_server=server_role
 		#next 3 maay be for server only - - - need to check
 		self.update_ready=False
-		self.attr_update_dict = {'sta': 0, 'spd': 0, 'drx': 0}
+		# self.attr_update_dict = {'sta': 0, 'spd': 0, 'drx': 0}
+		self.attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0}
 
 		self.get_info()
 		if server_role:
+			#serv_ refers to server, not service
 			((self.serv_status_value_handle, self.serv_speed_value_handle, self.serv_direx_value_handle,),) = self.bl.gatts_register_services(SERVICE_LIST)
-			self.attr_handle_dict = {'sta': self.serv_status_value_handle, 'spd': self.serv_speed_value_handle, 'drx': self.serv_direx_value_handle}
+			# self.attr_handle_dict = {'sta': self.serv_status_value_handle, 'spd': self.serv_speed_value_handle, 'drx': self.serv_direx_value_handle}
+			self.attr_handle_dict = {BLE_ATTR_STATUS: self.serv_status_value_handle, BLE_ATTR_SPEED: self.serv_speed_value_handle, BLE_ATTR_DIREX: self.serv_direx_value_handle}
 			self.advertise()
 		else:
 			self.scan()
@@ -102,11 +98,14 @@ class mc_BLE:
 			self.update_ready = True
 			conn_handle, attr_handle = data
 			if attr_handle == self.serv_status_value_handle:
-				self.attr_update_dict['sta'] = 1
+				# self.attr_update_dict['sta'] = 1
+				self.attr_update_dict[BLE_ATTR_STATUS] = 1
 			elif attr_handle == self.serv_speed_value_handle:
-				self.attr_update_dict['spd'] = 1
+				# self.attr_update_dict['spd'] = 1
+				self.attr_update_dict[BLE_ATTR_SPEED] = 1
 			elif attr_handle == self.serv_direx_value_handle:
-				self.attr_update_dict['drx'] = 1
+				# self.attr_update_dict['drx'] = 1
+				self.attr_update_dict[BLE_ATTR_DIREX] = 1
 
 		elif event == _IRQ_CENTRAL_DISCONNECT:
 			# A central has disconnected from this peripheral.

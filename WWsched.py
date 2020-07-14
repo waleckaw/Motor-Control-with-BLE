@@ -79,13 +79,18 @@ class coopSched:
 		#add all flags to master list
 		for a in range(len(self.task_list)):
 			for b in range(len(self.task_list[a].taskobj.flag_list)):
-				if (self.task_list[a].taskobj.flag_list[b].getFlagname() not in self.flag_master_callback_dict):
-					self.flag_master_callback_dict[self.task_list[a].taskobj.flag_list[b].getFlagname()] = []
+				# if (self.task_list[a].taskobj.flag_list[b].getFlagname() not in self.flag_master_callback_dict):
+				if (self.task_list[a].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_dict):
+					# self.flag_master_callback_dict[self.task_list[a].taskobj.flag_list[b].getFlagname()] = []
+					# if you find a new type of flag, initialize a callback list for it in the master flag callback dict
+					self.flag_master_callback_dict[self.task_list[a].taskobj.flag_list[b].getFlagType()] = []
 					#if you find a new key (flag), go through every task and check if it shares a flag... if so, add new callback to list
-					new_flag_added_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
+					# new_flag_added_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
+					new_flag_added_name = self.task_list[a].taskobj.flag_list[b].getFlagType()
 					for c in range(len(self.task_list)):
 						for d in range(len(self.task_list[c].taskobj.flag_list)):
-							if (self.task_list[c].taskobj.flag_list[d].getFlagname() == new_flag_added_name):
+							# if (self.task_list[c].taskobj.flag_list[d].getFlagname() == new_flag_added_name):
+							if (self.task_list[c].taskobj.flag_list[d].getFlagType() == new_flag_added_name):
 								self.flag_master_callback_dict[new_flag_added_name].append(self.task_list[c].taskobj.flag_list[d].flag_callback)
 		print(self.flag_master_callback_dict)
 
@@ -108,7 +113,8 @@ class coopSched:
 					for b in range(len(self.task_list[a].taskobj.flag_list)):
 						if (self.task_list[a].taskobj.flag_list[b].flag_set):
 							#check though all flags in each task's flag list to see if they are set
-							set_flag_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
+							# set_flag_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
+							set_flag_name = self.task_list[a].taskobj.flag_list[b].getFlagType()
 							# if a flag is set, run its callbacks (from each task)
 							for c in range(len(self.flag_master_callback_dict[set_flag_name])):
 								# if there is a function
@@ -118,6 +124,7 @@ class coopSched:
 										self.flag_master_callback_dict[set_flag_name][c](self.task_list[a].taskobj.flag_list[b].param)
 									else:
 										self.flag_master_callback_dict[set_flag_name][c]()
+									#unset flag so it is ignored when next task checks it
 									self.task_list[a].taskobj.flag_list[b].unsetFlag()
 
 
@@ -141,8 +148,9 @@ class coopSched:
 
 
 class flag:
-	def __init__(self,fn,name):
-		self.flag_name = name
+	def __init__(self,fn,ftype):
+		# self.flag_name = name
+		self.flag_type = ftype
 		self.flag_set = False
 		self.flag_callback = fn
 		self.param = None
@@ -157,7 +165,10 @@ class flag:
 		self.flag_set = False 
 
 	def getFlagname(self):
-		return self.flag_name
+		return self.flag_type
+
+	def getFlagType(self):
+		return self.flag_type
 
 #must find a way to add timeout stuff in here - debounce timer must change actual object in list
 
