@@ -256,7 +256,7 @@ class mc_BLE:
 
 	#BLE.gap_advertise(interval_us, adv_data=None, resp_data=None, connectable=True)
 	#us_interval needs to be a really high number - look into this more
-	def advertise(self, us_interval=80000, broadcast_data=b'\x66\x44\x33\x22', reply_data=b'\x55\x99\x33\x22', cnx=True):
+	def advertise(self, us_interval=40000, broadcast_data=b'\x66\x44\x33\x22', reply_data=b'\x55\x99\x33\x22', cnx=True):
 		#add funcitonality to disable scan first
 		self.bl.gap_advertise(interval_us=us_interval, adv_data=advEncodeName('WW Server'), resp_data=reply_data, connectable=cnx)
 		# while True:
