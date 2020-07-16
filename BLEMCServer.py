@@ -158,7 +158,7 @@ def coopSchedScript():
 	mt = MCTask()
 	bt = BLETask()
 	#task intervals must be higher than sys tick interval
-	scheduler.addTask(mt, 20)
+	scheduler.addTask(mt, 25)
 	scheduler.addTask(bt, 25)
 	scheduler.run()
 
