@@ -29,13 +29,13 @@ BLESTATE_NOTCONNECTED = const(1)
 BLESTATE_CONNECTED = const(2)
 
 #esp32 flags
-FLAG_BLE_CONNECTED = const(1)
+FLAG_BLE_CONNECTED = const(0)
+FLAG_UPDATE_STATUS = const(1)
 FLAG_UPDATE_SPEED = const(2)
 FLAG_UPDATE_DIREX = const(3)
-FLAG_UPDATE_STATUS = const(4)
+
 
 MC_Speed_Range = [30, 70]
-# import BLE_ATTR_XXX from BLE_Class instead
 
 scheduler = coopSched(tick_per_ms=10, use_esp32=True) #per = period, not /
 
@@ -49,6 +49,7 @@ class MCTask:
 		BLE_Connected_Flag = flag(fn=self.setToRunning, ftype=FLAG_BLE_CONNECTED)
 		Update_Status_Flag = flag(fn=self.updateStatus, ftype=FLAG_UPDATE_STATUS)
 		Update_Direx_Flag = flag(fn=self.updateDirex, ftype=FLAG_UPDATE_DIREX)
+		#order of flags in flag_list should follow order of flag enumeration
 		self.flag_list = [BLE_Connected_Flag, Update_Status_Flag, BLE_Updated_Desired_Speed_Flag, Update_Direx_Flag]
 
 	#all tasks added must have a function called run
@@ -114,6 +115,7 @@ class BLETask:
 		Connection_Flag = flag(fn=None, ftype=FLAG_BLE_CONNECTED)
 		Update_Status_Flag = flag(fn=None, ftype=FLAG_UPDATE_STATUS)
 		Update_Direx_Flag = flag(fn=None, ftype=FLAG_UPDATE_DIREX)
+		#order of flags in flag_list must follow order of flag enumeration, so that flags can be set using flag ID's
 		self.flag_list = [Connection_Flag, Update_Status_Flag, Update_Desired_Speed_Flag, Update_Direx_Flag]
 		self.ble = mc_BLE(server_role=True)
 		self.status = True
@@ -134,17 +136,17 @@ class BLETask:
 			if self.ble.update_ready:
 				#status (ON/OFF)
 				if self.ble.attr_update_dict[BLE_ATTR_STATUS]:
-					self.flag_list[1].setFlag()
+					self.flag_list[FLAG_UPDATE_STATUS].setFlag()
 					self.ble.attr_update_dict[BLE_ATTR_STATUS] = 0
 				#speed
 				if self.ble.attr_update_dict[BLE_ATTR_SPEED]:
 					self.des_speed = self.ble.server_readMotorCharacteristic(BLE_ATTR_SPEED)
-					self.flag_list[2].setFlag(inp_param=self.des_speed)
+					self.flag_list[FLAG_UPDATE_SPEED].setFlag(inp_param=self.des_speed)
 					self.ble.attr_update_dict[BLE_ATTR_SPEED] = 0
 				#direx
 				if self.ble.attr_update_dict[BLE_ATTR_DIREX]:
 					self.direx = self.ble.server_readMotorCharacteristic(BLE_ATTR_DIREX)
-					self.flag_list[3].setFlag()
+					self.flag_list[FLAG_UPDATE_DIREX].setFlag()
 					self.ble.attr_update_dict[BLE_ATTR_DIREX] = 0
 			else:
 				pass
