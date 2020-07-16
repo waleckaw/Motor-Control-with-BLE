@@ -11,7 +11,11 @@ from micropython import const
 
 micropython.alloc_emergency_exception_buf(100)
 
+#show debug messages
 WW_DEBUG = const(0)
+
+#use timing GPIO's
+WW_TIMING = const(1)
 
 
 #incorporate button state somehpw! - in WWschedtest.py
@@ -51,19 +55,27 @@ class coopSched:
 		self.track_var = False
 		self.sys_tick_interval=tick_per_ms
 		self.task_list = []
-		print('sys tick interval set to ', self.sys_tick_interval)
+		if WW_DEBUG: print('sys tick interval set to ', self.sys_tick_interval);
 		self.tick_count = 0
 		if use_esp32:
 			sys_tick_int_tim=Timer(-1)
 			sys_tick_int_tim.init(mode=Timer.PERIODIC, period=1, callback=self.tick)
 		else:
 			sys_tick_int_tim = Timer(mode=Timer.PERIODIC, period=1, callback=self.tick) #change period back to one
-
 		self.flag_master_callback_dict = {}
+		if WW_TIMING:
+			self.timing_pin = Pin(23, Pin.OUT)
+
+	def toggleTimingPin(self):
+		if self.timing_pin.value():
+			self.timing_pin.off()
+		else:
+			self.timing_pin.on()
 
 	def tick(self, tym):
 		self.tick_count = self.tick_count+1
 
+		#probably get ridof this
 	def toggleTrackVar(self):
 		if track_var:
 			self.track_var = False
@@ -132,7 +144,12 @@ class coopSched:
 				if WW_DEBUG: print('running tasks');
 				for a in range(len(self.task_list)):
 					if ((self.tick_count - self.task_list[a].last_tick) >= self.task_list[a].interval):
+						#could use WITH here, like dmzella
+						if WW_TIMING:
+							self.timing_pin.on()
 						self.task_list[a].taskobj.run()
+						if WW_TIMING:
+							self.timing_pin.off()
 						self.task_list[a].last_tick = self.tick_count
 		self.tick_count = 0
 
@@ -164,8 +181,8 @@ class flag:
 	def unsetFlag(self):
 		self.flag_set = False 
 
-	def getFlagname(self):
-		return self.flag_type
+	# def getFlagname(self):
+	# 	return self.flag_type
 
 	def getFlagType(self):
 		return self.flag_type

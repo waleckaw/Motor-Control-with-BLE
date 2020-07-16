@@ -16,7 +16,7 @@ from BLE_Class import BLE_ATTR_DIREX
 from micropython import const
 
 #Toggle debug print statements
-WW_DEBUG = const(1)
+WW_DEBUG = const(0)
 
 #Motor Controller states
 MCSTATE_IDLE = const(1)
@@ -38,6 +38,7 @@ MC_Speed_Range = [30, 70]
 # import BLE_ATTR_XXX from BLE_Class instead
 # motor_attributes = ['sta', 'spd', 'drx']
 
+scheduler = coopSched(tick_per_ms=10, use_esp32=True) #per = period, not /
 
 class MCTask:
 
@@ -49,13 +50,13 @@ class MCTask:
 		self.state = MCSTATE_IDLE
 		self.mc = MC()
 		# BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, type='ble_spd')
-		BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, type=FLAG_UPDATE_SPEED)
+		BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, ftype=FLAG_UPDATE_SPEED)
 		# BLE_Connected_Flag = flag(fn=self.setToRunning, type='ble_connected')
-		BLE_Connected_Flag = flag(fn=self.setToRunning, type=FLAG_BLE_CONNECTED)
+		BLE_Connected_Flag = flag(fn=self.setToRunning, ftype=FLAG_BLE_CONNECTED)
 		# Update_Status_Flag = flag(fn=self.updateStatus, type='ble_sta')
-		Update_Status_Flag = flag(fn=self.updateStatus, type=FLAG_UPDATE_STATUS)
+		Update_Status_Flag = flag(fn=self.updateStatus, ftype=FLAG_UPDATE_STATUS)
 		# Update_Direx_Flag = flag(fn=self.updateDirex, type='ble_drx')
-		Update_Direx_Flag = flag(fn=self.updateDirex, type=FLAG_UPDATE_DIREX)
+		Update_Direx_Flag = flag(fn=self.updateDirex, ftype=FLAG_UPDATE_DIREX)
 		self.flag_list = [BLE_Connected_Flag, Update_Status_Flag, BLE_Updated_Desired_Speed_Flag, Update_Direx_Flag]
 
 	#all tasks added must have a function called run
@@ -69,7 +70,7 @@ class MCTask:
 ##############################################################################################################################
 		if WW_DEBUG: print('running MCTask');
 		# if self.state == 'idle' #task initial state - wait to take action until connected
-		if self.state == MCSTATE_IDLE #task initial state - wait to take action until connected
+		if self.state == MCSTATE_IDLE: #task initial state - wait to take action until connected
 			pass
 		# if self.state == 'running':
 		if self.state == MCSTATE_RUNNING:
@@ -127,13 +128,13 @@ class BLETask:
 		#self.state = 'not_connected'
 		self.state = BLESTATE_NOTCONNECTED
 		# Update_Desired_Speed_Flag = flag(fn=self.dummyMethod, type='ble_spd')
-		Update_Desired_Speed_Flag = flag(fn=self.dummyMethod, type=FLAG_UPDATE_SPEED)
+		Update_Desired_Speed_Flag = flag(fn=self.dummyMethod, ftype=FLAG_UPDATE_SPEED)
 		# Connection_Flag = flag(fn=None, type='ble_connected')
-		Connection_Flag = flag(fn=None, type=FLAG_BLE_CONNECTED)
+		Connection_Flag = flag(fn=None, ftype=FLAG_BLE_CONNECTED)
 		# Update_Status_Flag = flag(fn=None, type='ble_sta')
-		Update_Status_Flag = flag(fn=None, type=FLAG_UPDATE_STATUS)
+		Update_Status_Flag = flag(fn=None, ftype=FLAG_UPDATE_STATUS)
 		# Update_Direx_Flag = flag(fn=None, type='ble_drx')
-		Update_Direx_Flag = flag(fn=None, type=FLAG_UPDATE_DIREX)
+		Update_Direx_Flag = flag(fn=None, ftype=FLAG_UPDATE_DIREX)
 		self.flag_list = [Connection_Flag, Update_Status_Flag, Update_Desired_Speed_Flag, Update_Direx_Flag]
 		self.ble = mc_BLE(server_role=True)
 		self.status = True
@@ -187,9 +188,9 @@ class BLETask:
 def coopSchedScript():
 	mt = MCTask()
 	bt = BLETask()
-	scheduler = coopSched(tick_per_ms=1000, use_esp32=True) #per = period, not /
-	scheduler.addTask(mt, 3000)
-	scheduler.addTask(bt, 3000)
+	#task intervals must be higher than sys tick interval
+	scheduler.addTask(mt, 20)
+	scheduler.addTask(bt, 25)
 	scheduler.run()
 
 
