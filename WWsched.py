@@ -12,7 +12,7 @@ from micropython import const
 micropython.alloc_emergency_exception_buf(100)
 
 #show debug messages
-WW_DEBUG = const(0)
+WW_DEBUG = const(1)
 
 #use timing GPIO's
 WW_TIMING = const(1)
@@ -62,7 +62,7 @@ class coopSched:
 			sys_tick_int_tim.init(mode=Timer.PERIODIC, period=1, callback=self.tick)
 		else:
 			sys_tick_int_tim = Timer(mode=Timer.PERIODIC, period=1, callback=self.tick) #change period back to one
-		self.flag_master_callback_dict = {}
+		self.flag_master_callback_ID_dict = {}
 		if WW_TIMING:
 			self.timing_pin = Pin(23, Pin.OUT)
 
@@ -82,36 +82,24 @@ class coopSched:
 		self.task_list.append(newTask)
 
 	def run(self):
-		#add all flags to master list
+		#add all flag callback task ID's to master list
 		for a in range(len(self.task_list)):
 			for b in range(len(self.task_list[a].taskobj.flag_list)):
-				# if (self.task_list[a].taskobj.flag_list[b].getFlagname() not in self.flag_master_callback_dict):
-				if (self.task_list[a].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_dict):
-					# self.flag_master_callback_dict[self.task_list[a].taskobj.flag_list[b].getFlagname()] = []
+				if (self.task_list[a].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_ID_dict):
 					# if you find a new type of flag, initialize a callback list for it in the master flag callback dict
-					self.flag_master_callback_dict[self.task_list[a].taskobj.flag_list[b].getFlagType()] = []
+					new_flag_added_ID = self.task_list[a].taskobj.flag_list[b].getFlagType()
+					self.flag_master_callback_ID_dict[new_flag_added_ID] = []
 					#if you find a new key (flag), go through every task and check if it shares a flag... if so, add new callback to list
-					# new_flag_added_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
-					new_flag_added_name = self.task_list[a].taskobj.flag_list[b].getFlagType()
 					for c in range(len(self.task_list)):
 						for d in range(len(self.task_list[c].taskobj.flag_list)):
-							# if (self.task_list[c].taskobj.flag_list[d].getFlagname() == new_flag_added_name):
-							if (self.task_list[c].taskobj.flag_list[d].getFlagType() == new_flag_added_name):
-								self.flag_master_callback_dict[new_flag_added_name].append(self.task_list[c].taskobj.flag_list[d].flag_callback)
-		print(self.flag_master_callback_dict)
+							if self.task_list[c].taskobj.flag_list[d].getFlagType() == new_flag_added_ID and self.task_list[c].taskobj.flag_list[d].flag_callback is not None:
+								self.flag_master_callback_ID_dict[new_flag_added_ID].append(self.task_list[c].taskobj.task_id)
+		if WW_DEBUG: print("callback dict:", self.flag_master_callback_ID_dict)
 
 		#create list of callbacks for each flag
 
 		while(True):
 			if (self.tick_count % self.sys_tick_interval == 0):
-				#check flags and respond at sys tick interval rate
-				# for a in range(len(self.task_list)):
-				# 	for b in range(len(self.task_list[a].taskobj.flag_list)):
-				# 		if self.task_list[a].taskobj.flag_list[b].flag_set:
-				# 			print('set flag being checked')
-				# 			self.task_list[a].taskobj.flag_list[b].flag_callback()
-				# 			self.task_list[a].taskobj.flag_list[b].unsetFlag()
-
 				#check if flags are set then every sys_tick
 				#rather than run through each task's flag list and run callbacks in order of task...
 				#see a flag is set, run all callbacks associated with that flag
@@ -121,34 +109,33 @@ class coopSched:
 				for a in range(len(self.task_list)):
 					for b in range(len(self.task_list[a].taskobj.flag_list)):
 						curr_flag = self.task_list[a].taskobj.flag_list[b]
-						if curr_flag.flag_set 
+						#curr_flag = the actual flag in the task that you are checking
+						if curr_flag.flag_set:
+							# if flag is set and hasn't already been called from master callback dict
 							if curr_flag.flag_type not in serviced_flag_list:
 								set_flag_ID = curr_flag.flag_type
 								#mark flag so it is ignored if set in other tasks
-								serviced_flags.append(set_flag_ID)
+								serviced_flag_list.append(set_flag_ID)
 								# if a flag is set, run its callbacks (from each task)
-								for c in range(len(self.flag_master_callback_dict[set_flag_ID])):
-									# if there is a function
-									if self.flag_master_callback_dict[set_flag_ID][c] is not None:
-										#if the flag has a paaram
+								#c is task_id of each task that holds this flag
+								for c in range(len(self.flag_master_callback_ID_dict[set_flag_ID])):
+									#task_id_of_flag = task id of task 'c' that contains curr_flag in list
+									task_id_of_flag = self.flag_master_callback_ID_dict[set_flag_ID][c]
+									#if self.flag_master_callback_dict[set_flag_ID][c] is not None:
+									# if there is a callback available - idea, only add flags to master callback dict if they have callbacks
 
-										#will this try to run all callbacks with curr_flag's param? :/
+									#TESTING ABOVE IDEA
 
-										if curr_flag.param is not None:
-											#need a way to retrieve the flag FROM THE TASK corresponding to the callback so that we can get its param
-											self.flag_master_callback_dict[set_flag_ID][c](self.task_list[a].taskobj.flag_list[b].param)
+									flag_to_service = self.task_list[task_id_of_flag].taskobj.flag_list[set_flag_ID]
+									if flag_to_service.flag_callback is not None:
+										if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
+										#run flag callback with param if it has one
+										if flag_to_service.param is not None:
+											flag_to_service.flag_callback(flag_to_service.param)
 										else:
-											self.flag_master_callback_dict[set_flag_ID][c]()
-										#unset flag
-										self.task_list[a].taskobj.flag_list[b].unsetFlag()
-							else:
-								curr_flag.unsetFlag()
-
-asldfsdfjlsdkjf
-					
-
-					#add protection so that if multiple tasks set flag at same time, whole array won't get called twice
-
+											flag_to_service.flag_callback()
+								#This should also assure that if flag set in other task but already has been checked, unset and ignore
+						curr_flag.unsetFlag()
 
 				#run ongoing tasks
 				if WW_DEBUG: print('running tasks');

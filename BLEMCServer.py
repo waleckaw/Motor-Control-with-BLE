@@ -40,7 +40,7 @@ TASKID_BLETASK =const(1)
 
 MC_Speed_Range = [30, 70]
 
-scheduler = coopSched(tick_per_ms=10, use_esp32=True) #per = period, not /
+scheduler = coopSched(tick_per_ms=1000, use_esp32=True) #per = period, not /
 
 class MCTask:
 
@@ -153,6 +153,7 @@ class BLETask:
 					self.direx = self.ble.server_readMotorCharacteristic(BLE_ATTR_DIREX)
 					self.flag_list[FLAG_UPDATE_DIREX].setFlag()
 					self.ble.attr_update_dict[BLE_ATTR_DIREX] = 0
+				self.ble.update_ready = False
 			else:
 				pass
 
@@ -163,8 +164,8 @@ def coopSchedScript():
 	mt = MCTask()
 	bt = BLETask()
 	#task intervals must be higher than sys tick interval
-	scheduler.addTask(mt, 25)
-	scheduler.addTask(bt, 25)
+	scheduler.addTask(mt, 3000)
+	scheduler.addTask(bt, 3000)
 	scheduler.run()
 
 
