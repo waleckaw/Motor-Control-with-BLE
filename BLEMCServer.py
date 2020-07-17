@@ -34,6 +34,9 @@ FLAG_UPDATE_STATUS = const(1)
 FLAG_UPDATE_SPEED = const(2)
 FLAG_UPDATE_DIREX = const(3)
 
+TASKID_MCTASK =const(0)
+TASKID_BLETASK =const(1)
+
 
 MC_Speed_Range = [30, 70]
 
@@ -43,6 +46,7 @@ class MCTask:
 
 	#intialize MCTask - state, MC() obj from MC_Class.py, and flags
 	def __init__(self):
+		self.task_id = TASKID_MCTASK
 		self.state = MCSTATE_IDLE
 		self.mc = MC()
 		BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, ftype=FLAG_UPDATE_SPEED)
@@ -111,6 +115,7 @@ class BLETask:
 
 	def __init__(self):
 		self.state = BLESTATE_NOTCONNECTED
+		self.task_id = TASKID_BLETASK
 		Update_Desired_Speed_Flag = flag(fn=self.dummyMethod, ftype=FLAG_UPDATE_SPEED)
 		Connection_Flag = flag(fn=None, ftype=FLAG_BLE_CONNECTED)
 		Update_Status_Flag = flag(fn=None, ftype=FLAG_UPDATE_STATUS)
