@@ -70,10 +70,9 @@ class mc_BLE:
 		self.is_server=server_role
 		#next 3 maay be for server only - - - need to check
 		self.update_ready=False
-		# self.attr_update_dict = {'sta': 0, 'spd': 0, 'drx': 0}
 		self.attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0}
 
-		self.get_info()
+		self.__get_info()
 		if server_role:
 			#serv_ refers to server, not service
 			((self.serv_status_value_handle, self.serv_speed_value_handle, self.serv_direx_value_handle,),) = self.bl.gatts_register_services(SERVICE_LIST)
@@ -98,18 +97,17 @@ class mc_BLE:
 			self.update_ready = True
 			conn_handle, attr_handle = data
 			if attr_handle == self.serv_status_value_handle:
-				# self.attr_update_dict['sta'] = 1
 				self.attr_update_dict[BLE_ATTR_STATUS] = 1
 			elif attr_handle == self.serv_speed_value_handle:
-				# self.attr_update_dict['spd'] = 1
 				self.attr_update_dict[BLE_ATTR_SPEED] = 1
 			elif attr_handle == self.serv_direx_value_handle:
-				# self.attr_update_dict['drx'] = 1
 				self.attr_update_dict[BLE_ATTR_DIREX] = 1
 
 		elif event == _IRQ_CENTRAL_DISCONNECT:
 			# A central has disconnected from this peripheral.
 			conn_handle, addr_type, addr = data
+			#must be a server for this to happen
+			self.advertise()
 
 		elif event == _IRQ_SCAN_RESULT:
 			addr_type, addr, adv_type, rssi, adv_data = data
@@ -143,7 +141,9 @@ class mc_BLE:
 		elif event == _IRQ_PERIPHERAL_DISCONNECT:
 	     	# Connected peripheral has disconnected.
 			conn_handle, addr_type, addr = data
-			print('peripheral disconnected')
+			if WW_DEBUG: print('peripheral disconnected')
+			self.addr_list.clear()
+			self.scan()
 
 		elif event == _IRQ_GATTC_CHARACTERISTIC_RESULT:
 			# Called for each characteristic found by gattc_discover_services().
@@ -164,7 +164,7 @@ class mc_BLE:
 			# Called once service discovery is complete.
 			# Note: Status will be zero on success, implementation-specific value otherwise.
 			conn_handle, status = data
-			print('Characteristics discovered. PRESS ENTER to continue')
+			if WW_DEBUG: print('Characteristics discovered. PRESS ENTER to continue')
 			return
 
 		elif event == _IRQ_GATTC_WRITE_DONE:
@@ -172,7 +172,7 @@ class mc_BLE:
 			# Note: The value_handle will be zero on btstack (but present on NimBLE).
 			# Note: Status will be zero on success, implementation-specific value otherwise.
 			conn_handle, value_handle, status = data
-			print('gatt client write complete: ', value_handle)
+			if WW_DEBUG: print('gatt client write complete: ', value_handle)
 
 		elif event == _IRQ_GATTC_READ_RESULT:
 			# A gattc_read() has completed.
@@ -188,7 +188,7 @@ class mc_BLE:
 			conn_handle, value_handle, status = data
 			print('gattc read done')
 
-	def get_info(self):
+	def __get_info(self):
 		mac = self.bl.config('mac')
 		print('mac address = ', mac)
 		gap = self.bl.config('gap_name')
@@ -275,60 +275,47 @@ class mc_BLE:
 
 
 
-# @staticmethod
-def decodeAddress(addr):
-	i = 0
-	while i < len(addr):
-		hexa = hex(addr[i])
-		print(hexa, end = ' ') 
-		i += 1
-	print('')
-######################################stolen from upython forum, might be useful later on######################################
+	@staticmethod
+	def decodeAddress(addr):
+		i = 0
+		while i < len(addr):
+			hexa = hex(addr[i])
+			print(hexa, end = ' ') 
+			i += 1
+		print('')
 
-# @staticmethod
-def advEncode(adv_type, value):
-    return bytes((len(value) + 1, adv_type,)) + value
+	#following three Encode methods taken form uPython forum
 
-# @staticmethod
-def advEncodeName(name):
-    return advEncode(const(0x09), name.encode())
+	@staticmethod
+	def advEncode(adv_type, value):
+	    return bytes((len(value) + 1, adv_type,)) + value
 
-# @staticmethod
-def advEncodeServiceData(data):
-	return advEncode(const(0x16), data.encode())
+	@staticmethod
+	def advEncodeName(name):
+	    return advEncode(const(0x09), name.encode())
 
-#bt.gap_advertise(100, adv_encode_name('HelloFri3d'))
+	@staticmethod
+	def advEncodeServiceData(data):
+		return advEncode(const(0x16), data.encode())
 
-##################################################end stolen from upython forum################################################
-
-# class connectable ble: - - - >>>make this a thing, its a good idea (don't just put adv data, put everything else)
-	
-# 	def __init__(len, type, val):
-
-# @staticmethod
-def decodeAdvData(raw_adv_data):
-	total_len = len(raw_adv_data)
-	ind = 0
-	while total_len > 0:
-		sn_length = raw_adv_data[ind]
-		ind += 1
-		print('adv_length: ', sn_length)
-		sn_type = raw_adv_data[ind]
-		ind += 1
-		print('adv_type: ', sn_type)
-		sn_data = raw_adv_data[ind : sn_length+1]
-		print('adv_data: ', sn_data)
-		ind +=sn_length-1
-		total_len -= (sn_length+1)
-		print('-----------')
-
-
-# >>> mv = b'r\xe2\t\xce\x01\x91'
-# >>> str(mv)
-# "b'r\\xe2\\t\\xce\\x01\\x91'"
-
-#BIG QUESTION: CAN YOU CALL FUNCTIONS not as methods (no obj.fuinction) if you import the module the function is in? or is this bad practice
-
+	# class connectable ble: - - - >>>make this a thing, its a good idea (don't just put adv data, put everything else)
+		
+	@staticmethod
+	def decodeAdvData(raw_adv_data):
+		total_len = len(raw_adv_data)
+		ind = 0
+		while total_len > 0:
+			sn_length = raw_adv_data[ind]
+			ind += 1
+			print('adv_length: ', sn_length)
+			sn_type = raw_adv_data[ind]
+			ind += 1
+			print('adv_type: ', sn_type)
+			sn_data = raw_adv_data[ind : sn_length+1]
+			print('adv_data: ', sn_data)
+			ind +=sn_length-1
+			total_len -= (sn_length+1)
+			print('-----------')
 
 
 
