@@ -12,30 +12,10 @@ from micropython import const
 micropython.alloc_emergency_exception_buf(100)
 
 #show debug messages
-WW_DEBUG = const(1)
+WW_DEBUG = const(0)
 
 #use timing GPIO's
 WW_TIMING = const(1)
-
-
-#incorporate button state somehpw! - in WWschedtest.py
-
-#aadd event checkers and continuous tasks
-
-#create modules for SM and event checker - moved to WWES.py
-
-#tick_count = 0
-
-# def tick(tym):
-# 	global tick_count
-# 	tick_count = tick_count+1
-	#toggleLEDPin()
-
-#this timer always goes off every 1 ms... if you only want sys to run at 50 ms intervals, change coopSched.sys_tick_interval to 50
-#timer can't go any faster
-
-def calcTicksForTaskFreq(task_per, sys_per):
-	return task_per/sys_per
 
 ####################################################################################################################
 
@@ -57,6 +37,8 @@ class coopSched:
 		self.task_list = []
 		if WW_DEBUG: print('sys tick interval set to ', self.sys_tick_interval);
 		self.tick_count = 0
+		#Timer defined here always goes off every 1 ms... if you only want sys to run at 50 ms intervals, change coopSched.sys_tick_interval to 50
+		#timer can't go any faster
 		if use_esp32:
 			sys_tick_int_tim=Timer(-1)
 			sys_tick_int_tim.init(mode=Timer.PERIODIC, period=1, callback=self.tick)
@@ -81,7 +63,7 @@ class coopSched:
 		newTask = coopSched.task(user_task, per_ms)
 		self.task_list.append(newTask)
 
-	def run(self):
+	def __addCallbacksToMasterDict(self):
 		#add all flag callback task ID's to master list
 		for a in range(len(self.task_list)):
 			for b in range(len(self.task_list[a].taskobj.flag_list)):
@@ -96,7 +78,11 @@ class coopSched:
 								self.flag_master_callback_ID_dict[new_flag_added_ID].append(self.task_list[c].taskobj.task_id)
 		if WW_DEBUG: print("callback dict:", self.flag_master_callback_ID_dict)
 
+	def run(self):
+
 		#create list of callbacks for each flag
+
+		self.__addCallbacksToMasterDict()
 
 		while(True):
 			if (self.tick_count % self.sys_tick_interval == 0):
@@ -121,12 +107,8 @@ class coopSched:
 								for c in range(len(self.flag_master_callback_ID_dict[set_flag_ID])):
 									#task_id_of_flag = task id of task 'c' that contains curr_flag in list
 									task_id_of_flag = self.flag_master_callback_ID_dict[set_flag_ID][c]
-									#if self.flag_master_callback_dict[set_flag_ID][c] is not None:
-									# if there is a callback available - idea, only add flags to master callback dict if they have callbacks
-
-									#TESTING ABOVE IDEA
-
 									flag_to_service = self.task_list[task_id_of_flag].taskobj.flag_list[set_flag_ID]
+									# if flag has callback
 									if flag_to_service.flag_callback is not None:
 										if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
 										#run flag callback with param if it has one
@@ -150,14 +132,11 @@ class coopSched:
 						self.task_list[a].last_tick = self.tick_count
 		self.tick_count = 0
 
-#WWsched: get rid of legacy code, add error checking for task frequency, fix flag callback bug'
-
 ####################################################################################################################
 
 												#FLAG#
 
 ####################################################################################################################
-
 
 class flag:
 	def __init__(self,fn,ftype):
@@ -176,13 +155,8 @@ class flag:
 	def unsetFlag(self):
 		self.flag_set = False 
 
-	# def getFlagname(self):
-	# 	return self.flag_type
-
 	def getFlagType(self):
 		return self.flag_type
-
-#must find a way to add timeout stuff in here - debounce timer must change actual object in list
 
 
 
