@@ -75,19 +75,13 @@ class coopSched:
 	def tick(self, tym):
 		self.tick_count = self.tick_count+1
 
-		#probably get ridof this
-	def toggleTrackVar(self):
-		if track_var:
-			self.track_var = False
-		else:
-			self.track_var = True
-
 	def addTask(self, user_task, per_ms):
+		if per_ms < self.sys_tick_interval:
+			raise Exception("task will run AT MOST at the same frequency as the scheduler tick")
 		newTask = coopSched.task(user_task, per_ms)
 		self.task_list.append(newTask)
 
 	def run(self):
-
 		#add all flags to master list
 		for a in range(len(self.task_list)):
 			for b in range(len(self.task_list[a].taskobj.flag_list)):
@@ -118,26 +112,42 @@ class coopSched:
 				# 			self.task_list[a].taskobj.flag_list[b].flag_callback()
 				# 			self.task_list[a].taskobj.flag_list[b].unsetFlag()
 
-				#new flag system!!! - check if flags are set then update master
-
+				#check if flags are set then every sys_tick
+				#rather than run through each task's flag list and run callbacks in order of task...
+				#see a flag is set, run all callbacks associated with that flag
 				if WW_DEBUG: print('checking flags');
+				serviced_flag_list = []
+				#check though all flags in each task's flag list to see if they are set
 				for a in range(len(self.task_list)):
 					for b in range(len(self.task_list[a].taskobj.flag_list)):
-						if (self.task_list[a].taskobj.flag_list[b].flag_set):
-							#check though all flags in each task's flag list to see if they are set
-							# set_flag_name = self.task_list[a].taskobj.flag_list[b].getFlagname()
-							set_flag_name = self.task_list[a].taskobj.flag_list[b].getFlagType()
-							# if a flag is set, run its callbacks (from each task)
-							for c in range(len(self.flag_master_callback_dict[set_flag_name])):
-								# if there is a function
-								if self.flag_master_callback_dict[set_flag_name][c] is not None:
-									#if the flag has a paaram
-									if self.task_list[a].taskobj.flag_list[b].param is not None:
-										self.flag_master_callback_dict[set_flag_name][c](self.task_list[a].taskobj.flag_list[b].param)
-									else:
-										self.flag_master_callback_dict[set_flag_name][c]()
-									#unset flag so it is ignored when next task checks it
-									self.task_list[a].taskobj.flag_list[b].unsetFlag()
+						curr_flag = self.task_list[a].taskobj.flag_list[b]
+						if curr_flag.flag_set 
+							if curr_flag.flag_type not in serviced_flag_list:
+								set_flag_ID = curr_flag.flag_type
+								#mark flag so it is ignored if set in other tasks
+								serviced_flags.append(set_flag_ID)
+								# if a flag is set, run its callbacks (from each task)
+								for c in range(len(self.flag_master_callback_dict[set_flag_ID])):
+									# if there is a function
+									if self.flag_master_callback_dict[set_flag_ID][c] is not None:
+										#if the flag has a paaram
+
+										#will this try to run all callbacks with curr_flag's param? :/
+
+										if curr_flag.param is not None:
+											#need a way to retrieve the flag FROM THE TASK corresponding to the callback so that we can get its param
+											self.flag_master_callback_dict[set_flag_ID][c](self.task_list[a].taskobj.flag_list[b].param)
+										else:
+											self.flag_master_callback_dict[set_flag_ID][c]()
+										#unset flag
+										self.task_list[a].taskobj.flag_list[b].unsetFlag()
+							else:
+								curr_flag.unsetFlag()
+
+
+					
+
+					#add protection so that if multiple tasks set flag at same time, whole array won't get called twice
 
 
 				#run ongoing tasks
@@ -153,9 +163,7 @@ class coopSched:
 						self.task_list[a].last_tick = self.tick_count
 		self.tick_count = 0
 
-	# def restartTick(self):
-	# 	global tick_count
-	# 	tick_count = 0
+#WWsched: get rid of legacy code, add error checking for task frequency, fix flag callback bug'
 
 ####################################################################################################################
 
