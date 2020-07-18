@@ -29,7 +29,7 @@ _IRQ_GATTC_READ_RESULT = const(15)
 _IRQ_GATTC_READ_DONE = const(16)
 _IRQ_GATTC_WRITE_DONE = const(17)
 
-WW_DEBUG = const(1)
+WW_DEBUG = const(0)
 
 adv_type_dict = {0x00: 'ADV_IND - connectable and scannable undirected advertising',
 0x01: 'ADV_DIRECT_IND - connectable directed advertising',
@@ -282,38 +282,38 @@ class mc_BLE:
 			i += 1
 		print('')
 
-	#following three Encode methods taken form uPython forum
+#following three Encode methods taken form uPython forum
 
-	@staticmethod
-	def advEncode(adv_type, value):
-	    return bytes((len(value) + 1, adv_type,)) + value
+# @staticmethod
+def advEncode(adv_type, value):
+    return bytes((len(value) + 1, adv_type,)) + value
 
-	@staticmethod
-	def advEncodeName(name):
-	    return advEncode(const(0x09), name.encode())
+# @staticmethod
+def advEncodeName(name):
+    return advEncode(const(0x09), name.encode())
 
-	@staticmethod
-	def advEncodeServiceData(data):
-		return advEncode(const(0x16), data.encode())
+# @staticmethod
+def advEncodeServiceData(data):
+	return advEncode(const(0x16), data.encode())
 
-	# class connectable ble: - - - >>>make this a thing, its a good idea (don't just put adv data, put everything else)
-		
-	@staticmethod
-	def decodeAdvData(raw_adv_data):
-		total_len = len(raw_adv_data)
-		ind = 0
-		while total_len > 0:
-			sn_length = raw_adv_data[ind]
-			ind += 1
-			print('adv_length: ', sn_length)
-			sn_type = raw_adv_data[ind]
-			ind += 1
-			print('adv_type: ', sn_type)
-			sn_data = raw_adv_data[ind : sn_length+1]
-			print('adv_data: ', sn_data)
-			ind +=sn_length-1
-			total_len -= (sn_length+1)
-			print('-----------')
+# class connectable ble: - - - >>>make this a thing, its a good idea (don't just put adv data, put everything else)
+	
+# @staticmethod
+def decodeAdvData(raw_adv_data):
+	total_len = len(raw_adv_data)
+	ind = 0
+	while total_len > 0:
+		sn_length = raw_adv_data[ind]
+		ind += 1
+		print('adv_length: ', sn_length)
+		sn_type = raw_adv_data[ind]
+		ind += 1
+		print('adv_type: ', sn_type)
+		sn_data = raw_adv_data[ind : sn_length+1]
+		print('adv_data: ', sn_data)
+		ind +=sn_length-1
+		total_len -= (sn_length+1)
+		print('-----------')
 
 
 

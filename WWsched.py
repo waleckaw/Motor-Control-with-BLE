@@ -14,8 +14,25 @@ micropython.alloc_emergency_exception_buf(100)
 #show debug messages
 WW_DEBUG = const(0)
 
-#use timing GPIO's
+#use timing GPIO
 WW_TIMING = const(1)
+
+#timing task & caallbacks
+TIMING_TASK = const(0)
+TIMING_CALLBACK = const(1)
+
+class TIMING_CONTEXT(object):
+
+	def __init__(self, pin):
+		self._pin = pin 
+
+	def __enter__(self):
+		if WW_TIMING: self._pin.on()
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		if WW_TIMING: self._pin.off()
+		return all(map(lambda x: x is None, [exc_type, exc_value, traceback]))
+
 
 ####################################################################################################################
 
@@ -37,6 +54,7 @@ class coopSched:
 		self.task_list = []
 		if WW_DEBUG: print('sys tick interval set to ', self.sys_tick_interval);
 		self.tick_count = 0
+		self._timing_pin = Pin(23, Pin.OUT)
 		#Timer defined here always goes off every 1 ms... if you only want sys to run at 50 ms intervals, change coopSched.sys_tick_interval to 50
 		#timer can't go any faster
 		if use_esp32:
@@ -45,14 +63,12 @@ class coopSched:
 		else:
 			sys_tick_int_tim = Timer(mode=Timer.PERIODIC, period=1, callback=self.tick) #change period back to one
 		self.flag_master_callback_ID_dict = {}
-		if WW_TIMING:
-			self.timing_pin = Pin(23, Pin.OUT)
 
-	def toggleTimingPin(self):
-		if self.timing_pin.value():
-			self.timing_pin.off()
-		else:
-			self.timing_pin.on()
+	# def toggleTimingPin(self):
+	# 	if self.timing_pin.value():
+	# 		self.timing_pin.off()
+	# 	else:
+	# 		self.timing_pin.on()
 
 	def tick(self, tym):
 		self.tick_count = self.tick_count+1
@@ -112,10 +128,17 @@ class coopSched:
 									if flag_to_service.flag_callback is not None:
 										if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
 										#run flag callback with param if it has one
-										if flag_to_service.param is not None:
-											flag_to_service.flag_callback(flag_to_service.param)
+										if TIMING_CALLBACK:
+											with TIMING_CONTEXT(self._timing_pin):
+												if flag_to_service.param is not None:
+													flag_to_service.flag_callback(flag_to_service.param)
+												else:
+													flag_to_service.flag_callback()
 										else:
-											flag_to_service.flag_callback()
+											if flag_to_service.param is not None:
+												flag_to_service.flag_callback(flag_to_service.param)
+											else:
+												flag_to_service.flag_callback()
 								#This should also assure that if flag set in other task but already has been checked, unset and ignore
 						curr_flag.unsetFlag()
 
@@ -124,11 +147,11 @@ class coopSched:
 				for a in range(len(self.task_list)):
 					if ((self.tick_count - self.task_list[a].last_tick) >= self.task_list[a].interval):
 						#could use WITH here, like dmzella
-						if WW_TIMING:
-							self.timing_pin.on()
-						self.task_list[a].taskobj.run()
-						if WW_TIMING:
-							self.timing_pin.off()
+						if TIMING_TASK:
+							with TIMING_CONTEXT(self._timing_pin):
+								self.task_list[a].taskobj.run()
+						else:
+							self.task_list[a].taskobj.run()
 						self.task_list[a].last_tick = self.tick_count
 		self.tick_count = 0
 
