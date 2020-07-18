@@ -273,8 +273,6 @@ class mc_BLE:
 	def __cnxToMyPC(self):
 		self.bl.gap_connect(0, self.pier, 200000)
 
-
-
 	@staticmethod
 	def decodeAddress(addr):
 		i = 0
