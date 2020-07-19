@@ -29,7 +29,7 @@ _IRQ_GATTC_READ_RESULT = const(15)
 _IRQ_GATTC_READ_DONE = const(16)
 _IRQ_GATTC_WRITE_DONE = const(17)
 
-WW_DEBUG = const(0)
+WW_DEBUG = const(1)
 
 adv_type_dict = {0x00: 'ADV_IND - connectable and scannable undirected advertising',
 0x01: 'ADV_DIRECT_IND - connectable directed advertising',
@@ -215,7 +215,10 @@ class mc_BLE:
 	def server_readMotorCharacteristic(self, key=None):
 		if self.is_server:
 			ret = self.bl.gatts_read(self.attr_handle_dict[key])
-			return int.from_bytes(ret, 'big')
+			if WW_DEBUG: print('this is the data before decoding: ', ret)
+			give = int.from_bytes(ret, 'big')
+			if WW_DEBUG: print('this is ret: ', give)
+			return give
 		else:
 			print('permission denied')
 

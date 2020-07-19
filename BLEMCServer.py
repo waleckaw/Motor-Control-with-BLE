@@ -49,7 +49,7 @@ class MCTask:
 		self.task_id = TASKID_MCTASK
 		self.state = MCSTATE_IDLE
 		self.mc = MC()
-		BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, ftype=FLAG_UPDATE_SPEED)
+		BLE_Updated_Desired_Speed_Flag = flag(fn=self.updateSpeed, ftype=FLAG_UPDATE_SPEED, take_param=True)
 		BLE_Connected_Flag = flag(fn=self.setToRunning, ftype=FLAG_BLE_CONNECTED)
 		Update_Status_Flag = flag(fn=self.updateStatus, ftype=FLAG_UPDATE_STATUS)
 		Update_Direx_Flag = flag(fn=self.updateDirex, ftype=FLAG_UPDATE_DIREX)
@@ -135,7 +135,7 @@ class BLETask:
 			if self.ble.getConnectionStatus():
 				self.state = BLESTATE_CONNECTED
 				if WW_DEBUG: print('connection!!! in BLETask run');
-				self.flag_list[1].setFlag()
+				self.flag_list[BLE_ATTR_STATUS].setFlag()
 		# event checker
 		if (self.state == BLESTATE_CONNECTED):
 			if self.ble.update_ready:
@@ -157,7 +157,7 @@ class BLETask:
 			else:
 				pass
 
-	def dummyMethod(self, speed_nm):
+	def dummyMethod(self):
 		pass
 
 def coopSchedScript():

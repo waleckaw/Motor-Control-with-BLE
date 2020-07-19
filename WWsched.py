@@ -12,7 +12,7 @@ from micropython import const
 micropython.alloc_emergency_exception_buf(100)
 
 #show debug messages
-WW_DEBUG = const(0)
+WW_DEBUG = const(1)
 
 #use timing GPIO
 WW_TIMING = const(1)
@@ -51,7 +51,9 @@ class coopSched:
 	def __init__(self, tick_per_ms=1, use_esp32=False):   #1 ms as default period
 		self.track_var = False
 		self.sys_tick_interval=tick_per_ms
-		self.task_list = []
+		# self.task_list = []
+		self.task_dict = {}
+		self.task_id_list = []
 		if WW_DEBUG: print('sys tick interval set to ', self.sys_tick_interval);
 		self.tick_count = 0
 		self._timing_pin = Pin(23, Pin.OUT)
@@ -77,26 +79,39 @@ class coopSched:
 		if per_ms < self.sys_tick_interval:
 			raise Exception("task will run AT MOST at the same frequency as the scheduler tick")
 		newTask = coopSched.task(user_task, per_ms)
-		self.task_list.append(newTask)
+		# self.task_list.append(newTask)
+		self.task_dict[user_task.task_id] = newTask
+		self.task_id_list.append(user_task.task_id)
 
 	def __addCallbacksToMasterDict(self):
 		#add all flag callback task ID's to master list
-		for a in range(len(self.task_list)):
-			for b in range(len(self.task_list[a].taskobj.flag_list)):
-				if (self.task_list[a].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_ID_dict):
+		# for a in range(len(self.task_list)):
+		for a in range(len(self.task_id_list)):
+			# for b in range(len(self.task_list[a].taskobj.flag_list)):
+			for b in range(len(self.task_dict[self.task_id_list[a]].taskobj.flag_list)):
+				# if (self.task_list[a].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_ID_dict):
+				if (self.task_dict[self.task_id_list[a]].taskobj.flag_list[b].getFlagType() not in self.flag_master_callback_ID_dict):
 					# if you find a new type of flag, initialize a callback list for it in the master flag callback dict
-					new_flag_added_ID = self.task_list[a].taskobj.flag_list[b].getFlagType()
+					# new_flag_added_ID = self.task_list[a].taskobj.flag_list[b].getFlagType()
+					new_flag_added_ID = self.task_dict[self.task_id_list[a]].taskobj.flag_list[b].getFlagType()
 					self.flag_master_callback_ID_dict[new_flag_added_ID] = []
 					#if you find a new key (flag), go through every task and check if it shares a flag... if so, add new callback to list
-					for c in range(len(self.task_list)):
-						for d in range(len(self.task_list[c].taskobj.flag_list)):
-							if self.task_list[c].taskobj.flag_list[d].getFlagType() == new_flag_added_ID and self.task_list[c].taskobj.flag_list[d].flag_callback is not None:
-								self.flag_master_callback_ID_dict[new_flag_added_ID].append(self.task_list[c].taskobj.task_id)
+					# for c in range(len(self.task_list)):
+					for c in range(len(self.task_id_list)):
+						# for d in range(len(self.task_list[c].taskobj.flag_list)):
+						for d in range(len(self.task_dict[self.task_id_list[c]].taskobj.flag_list)):
+							# if self.task_list[c].taskobj.flag_list[d].getFlagType() == new_flag_added_ID and self.task_list[c].taskobj.flag_list[d].flag_callback is not None:
+							if self.task_dict[self.task_id_list[c]].taskobj.flag_list[d].getFlagType() == new_flag_added_ID and self.task_dict[self.task_id_list[c]].taskobj.flag_list[d].flag_callback is not None:
+								# self.flag_master_callback_ID_dict[new_flag_added_ID].append(self.task_list[c].taskobj.task_id)
+								self.flag_master_callback_ID_dict[new_flag_added_ID].append(self.task_dict[self.task_id_list[c]].taskobj.task_id)
 		if WW_DEBUG: print("callback dict:", self.flag_master_callback_ID_dict)
 
 	def run(self):
 
 		#create list of callbacks for each flag
+
+		if WW_DEBUG: print('task dict: ', self.task_dict)
+		if WW_DEBUG: print('task id list: ', self.task_id_list)
 
 		self.__addCallbacksToMasterDict()
 
@@ -108,9 +123,12 @@ class coopSched:
 				if WW_DEBUG: print('checking flags');
 				serviced_flag_list = []
 				#check though all flags in each task's flag list to see if they are set
-				for a in range(len(self.task_list)):
-					for b in range(len(self.task_list[a].taskobj.flag_list)):
-						curr_flag = self.task_list[a].taskobj.flag_list[b]
+				# for a in range(len(self.task_list)):
+				for a in range(len(self.task_id_list)):
+					# for b in range(len(self.task_list[a].taskobj.flag_list)):
+					for b in range(len(self.task_dict[self.task_id_list[a]].taskobj.flag_list)):
+						# curr_flag = self.task_list[a].taskobj.flag_list[b]
+						curr_flag = self.task_dict[self.task_id_list[a]].taskobj.flag_list[b]
 						#curr_flag = the actual flag in the task that you are checking
 						if curr_flag.flag_set:
 							# if flag is set and hasn't already been called from master callback dict
@@ -120,23 +138,47 @@ class coopSched:
 								serviced_flag_list.append(set_flag_ID)
 								# if a flag is set, run its callbacks (from each task)
 								#c is task_id of each task that holds this flag
-								for c in range(len(self.flag_master_callback_ID_dict[set_flag_ID])):
+								# for c in self.flag_master_callback_ID_dict[set_flag_ID]: ------GO BACK AND MAKE IT THIS - MAKES IT FASTER
+
+								#OLD VERSION
+								# for c in range(len(self.flag_master_callback_ID_dict[set_flag_ID])):
+								# 	#task_id_of_flag = task id of task 'c' that contains curr_flag in list
+								# 	task_id_of_flag = self.flag_master_callback_ID_dict[set_flag_ID][c]
+								# 	flag_to_service = self.task_list[task_id_of_flag].taskobj.flag_list[set_flag_ID]
+								# 	# if flag has callback
+
+								#ISSUE IS PROBABLY THAT task_list PROBABLY NOT SORTED HOW WE THINK - MAYBE MAKE IT A DICT ACCESSIBLE BY TASK ID - HUGE BRAIN IDEA
+
+								if curr_flag.param is not None:
+									param_to_use = curr_flag.param
+									if WW_DEBUG: print('this is param to use: ', param_to_use)
+
+								for c in self.flag_master_callback_ID_dict[set_flag_ID]:
 									#task_id_of_flag = task id of task 'c' that contains curr_flag in list
-									task_id_of_flag = self.flag_master_callback_ID_dict[set_flag_ID][c]
-									flag_to_service = self.task_list[task_id_of_flag].taskobj.flag_list[set_flag_ID]
+									task_id_of_flag = c
+									# flag_to_service = self.task_list[task_id_of_flag].taskobj.flag_list[set_flag_ID]
+									flag_to_service = self.task_dict[task_id_of_flag].taskobj.flag_list[set_flag_ID]
 									# if flag has callback
-									if flag_to_service.flag_callback is not None:
-										if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
+
+									if flag_to_service.flag_callback is not None: #this line is unnecessary now - only callbacks are added
+										# if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
 										#run flag callback with param if it has one
 										if TIMING_CALLBACK:
 											with TIMING_CONTEXT(self._timing_pin):
-												if flag_to_service.param is not None:
-													flag_to_service.flag_callback(flag_to_service.param)
+												# if flag_to_service.param is not None:
+												if flag_to_service._take_param:
+													if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag, " with param ", flag_to_service.param)
+													# flag_to_service.flag_callback(flag_to_service.param)
+													flag_to_service.flag_callback(param_to_use)
+
 												else:
+													if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", task_id_of_flag)
 													flag_to_service.flag_callback()
 										else:
-											if flag_to_service.param is not None:
-												flag_to_service.flag_callback(flag_to_service.param)
+											# if flag_to_service.param is not None:
+											if flag_to_service._take_param:
+												# flag_to_service.flag_callback(flag_to_service.param)
+												flag_to_service.flag_callback(param_to_use)
 											else:
 												flag_to_service.flag_callback()
 								#This should also assure that if flag set in other task but already has been checked, unset and ignore
@@ -144,15 +186,20 @@ class coopSched:
 
 				#run ongoing tasks
 				if WW_DEBUG: print('running tasks');
-				for a in range(len(self.task_list)):
-					if ((self.tick_count - self.task_list[a].last_tick) >= self.task_list[a].interval):
+				# for a in range(len(self.task_list)):
+				for a in range(len(self.task_id_list)):
+					# if ((self.tick_count - self.task_list[a].last_tick) >= self.task_list[a].interval):
+					if ((self.tick_count - self.task_dict[self.task_id_list[a]].last_tick) >= self.task_dict[self.task_id_list[a]].interval):
 						#could use WITH here, like dmzella
 						if TIMING_TASK:
 							with TIMING_CONTEXT(self._timing_pin):
-								self.task_list[a].taskobj.run()
+								# self.task_list[a].taskobj.run()
+								self.task_dict[self.task_id_list[a]].taskobj.run()
 						else:
-							self.task_list[a].taskobj.run()
-						self.task_list[a].last_tick = self.tick_count
+							# self.task_list[a].taskobj.run()
+							self.task_dict[self.task_id_list[a]].taskobj.run()
+						# self.task_list[a].last_tick = self.tick_count
+						self.task_dict[self.task_id_list[a]].last_tick = self.tick_count
 		self.tick_count = 0
 
 ####################################################################################################################
@@ -162,12 +209,13 @@ class coopSched:
 ####################################################################################################################
 
 class flag:
-	def __init__(self,fn,ftype):
+	def __init__(self,fn,ftype,take_param=False):
 		# self.flag_name = name
 		self.flag_type = ftype
 		self.flag_set = False
 		self.flag_callback = fn
 		self.param = None
+		self._take_param = take_param
 		# self.hasParam = False
 
 	def setFlag(self, inp_param=None):
