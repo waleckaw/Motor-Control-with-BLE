@@ -1,5 +1,6 @@
 #Server - BLE/Motor Control Proj
 
+import machine
 from machine import Pin
 from machine import Timer
 
@@ -40,7 +41,7 @@ TASKID_BLETASK =const(1)
 
 MC_Speed_Range = [30, 70]
 
-scheduler = coopSched(tick_per_ms=1000, use_esp32=True) #per = period, not /
+scheduler = coopSched(tick_per_ms=10, use_esp32=True) #per = period, not /
 
 class MCTask:
 
@@ -88,7 +89,7 @@ class MCTask:
 	#callback function that updates motor speed
 	def updateSpeed(self, desired_speed=0):
 		if WW_DEBUG: print('updateSpeed being called. desired_speed = ', desired_speed)
-		if desired_speed > MC_Speed_Range[0] and desired_speed < MC_Speed_Range[1]:
+		if desired_speed >= MC_Speed_Range[0] and desired_speed <= MC_Speed_Range[1]:
 			if (desired_speed > self.mc.speed):
 				self.state = MCSTATE_SPEEDINGUP
 			else:
@@ -154,6 +155,9 @@ class BLETask:
 					self.flag_list[FLAG_UPDATE_DIREX].setFlag()
 					self.ble.attr_update_dict[BLE_ATTR_DIREX] = 0
 				self.ble.update_ready = False
+				#reset
+				if self.ble.attr_update_dict[BLE_ATTR_RESET]:
+					mcahine.reset()
 			else:
 				pass
 
@@ -164,8 +168,8 @@ def coopSchedScript():
 	mt = MCTask()
 	bt = BLETask()
 	#task intervals must be higher than sys tick interval
-	scheduler.addTask(mt, 3000)
-	scheduler.addTask(bt, 3000)
+	scheduler.addTask(mt, 30)
+	scheduler.addTask(bt, 30)
 	scheduler.run()
 
 

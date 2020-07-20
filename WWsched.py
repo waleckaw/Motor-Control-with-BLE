@@ -12,7 +12,7 @@ from micropython import const
 micropython.alloc_emergency_exception_buf(100)
 
 #show debug messages
-WW_DEBUG = const(1)
+WW_DEBUG = const(0)
 
 #use timing GPIO
 WW_TIMING = const(1)
@@ -142,7 +142,6 @@ class coopSched:
 												if flag_to_service._take_param:
 													if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", c, " with param ", param_to_use)
 													flag_to_service.flag_callback(param_to_use)
-
 												else:
 													if WW_DEBUG: print('running flag ', set_flag_ID, " from task ", c)
 													flag_to_service.flag_callback()

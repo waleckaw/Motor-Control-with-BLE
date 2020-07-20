@@ -1,14 +1,10 @@
 # only compatible with unstable builds for esp32
 
-#set up esp32 peripheral as client? request speed info from laptop, update desired speed if computer changes attribute
-#set up esp32 as server for now, have phone control data
-
 # https://www.oreilly.com/library/view/getting-started-with/9781491900550/ch04.html
 # It is worth mentioning once more that GATT roles are both completely independent of GAP roles (see “Roles”) and also concurrently 
 # compatible with each other. That means that both a GAP central and a GAP peripheral can act as a GATT client or server, 
 # or even act as both at the same time.
 
-#TODO: CONNECT TO COMPUTER - FIND WAY TO DO IT IN TERMAL OR GUI
 
 import ubluetooth
 import utime
@@ -46,17 +42,23 @@ _CLIENT_ADDR = b'$b\xab\xf9\x17\xd6'
 BLE_ATTR_STATUS = const(0)
 BLE_ATTR_SPEED = const(1)
 BLE_ATTR_DIREX = const(2)
+BLE_ATTR_RESET = const(3)
 
 
-CUSTOM_DESIRED_SPEED_SERVICE_UUID = ubluetooth.UUID('1ab35ef6-b76b-11ea-b3de-0242ac130004')
+CUSTOM_MOTOR_CONTROL_SERVICE_UUID = ubluetooth.UUID('1ab35ef6-b76b-11ea-b3de-0242ac130004')
+
 STATUS_UUID = ubluetooth.UUID('dac11e24-ba93-11ea-b3de-0242ac130004')
 CUSTOM_STATUS_CHAR = (STATUS_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
 DESIRED_SPEED_UUID = ubluetooth.UUID('a0ad58b2-b76c-11ea-b3de-0242ac130004')
 CUSTOM_DESIRED_SPEED_CHAR = (DESIRED_SPEED_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
 DIREX_UUID = ubluetooth.UUID('c6f75c74-ba88-11ea-b3de-0242ac130004')
 CUSTOM_DESIRED_DIREX_CHAR = (DIREX_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
-CUSTOM_DESIRED_SPEED_SERVICE = (CUSTOM_DESIRED_SPEED_SERVICE_UUID, (CUSTOM_STATUS_CHAR, CUSTOM_DESIRED_SPEED_CHAR, CUSTOM_DESIRED_DIREX_CHAR,),)
-SERVICE_LIST = (CUSTOM_DESIRED_SPEED_SERVICE,)
+
+RESET_UUID = ubluetooth.UUID('36ca78c0-ca32-11ea-87d0-0242ac130003')
+CUSTOM_DESIRED_RESET_CHAR = (RESET_UUID, ubluetooth.FLAG_WRITE)
+
+CUSTOM_MOTOR_CONTROL_SERVICE_UUID = (CUSTOM_MOTOR_CONTROL_SERVICE_UUID_UUID, (CUSTOM_STATUS_CHAR, CUSTOM_DESIRED_SPEED_CHAR, CUSTOM_DESIRED_DIREX_CHAR, CUSTOM_DESIRED_RESET_CHAR,),)
+SERVICE_LIST = (CUSTOM_MOTOR_CONTROL_SERVICE_UUID,)
 
 class mc_BLE:
 
@@ -70,14 +72,14 @@ class mc_BLE:
 		self.is_server=server_role
 		#next 3 maay be for server only - - - need to check
 		self.update_ready=False
-		self.attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0}
+		self.attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0, BLE_ATTR_RESET: 0}
 
 		self.__get_info()
 		if server_role:
 			#serv_ refers to server, not service
-			((self.serv_status_value_handle, self.serv_speed_value_handle, self.serv_direx_value_handle,),) = self.bl.gatts_register_services(SERVICE_LIST)
+			((self.serv_status_value_handle, self.serv_speed_value_handle, self.serv_direx_value_handle, self.serv_reset_value_handle),) = self.bl.gatts_register_services(SERVICE_LIST)
 			# self.attr_handle_dict = {'sta': self.serv_status_value_handle, 'spd': self.serv_speed_value_handle, 'drx': self.serv_direx_value_handle}
-			self.attr_handle_dict = {BLE_ATTR_STATUS: self.serv_status_value_handle, BLE_ATTR_SPEED: self.serv_speed_value_handle, BLE_ATTR_DIREX: self.serv_direx_value_handle}
+			self.attr_handle_dict = {BLE_ATTR_STATUS: self.serv_status_value_handle, BLE_ATTR_SPEED: self.serv_speed_value_handle, BLE_ATTR_DIREX: self.serv_direx_value_handle, BLE_ATTR_RESET: self.serv_reset_value_handle}
 			self.advertise()
 		else:
 			self.scan()
@@ -102,6 +104,8 @@ class mc_BLE:
 				self.attr_update_dict[BLE_ATTR_SPEED] = 1
 			elif attr_handle == self.serv_direx_value_handle:
 				self.attr_update_dict[BLE_ATTR_DIREX] = 1
+			elif attr_handle = self.serv_reset_value_handle:
+				self.attr_update_dict[BLE_ATTR_RESET] = 1
 
 		elif event == _IRQ_CENTRAL_DISCONNECT:
 			# A central has disconnected from this peripheral.
@@ -135,7 +139,7 @@ class mc_BLE:
 			# Called for each service found by gattc_discover_services().
 			conn_handle, start_handle, end_handle, uuid = data
 			if conn_handle == self.server_conn_handle:
-				if uuid == CUSTOM_DESIRED_SPEED_SERVICE_UUID:
+				if uuid == CUSTOM_MOTOR_CONTROL_SERVICE_UUID_UUID:
 					self.bl.gattc_discover_characteristics(self.server_conn_handle, start_handle, end_handle)
 					
 		elif event == _IRQ_PERIPHERAL_DISCONNECT:
@@ -151,14 +155,14 @@ class mc_BLE:
 			if conn_handle == self.server_conn_handle:
 				if uuid == STATUS_UUID:
 					self.cli_status_value_handle = value_handle
-					print('discovered status char')
+					if WW_DEBUG: print('discovered status char')
 				elif uuid == DESIRED_SPEED_UUID:
 					self.cli_speed_value_handle = value_handle
-					print('discovered speed char')
+					if WW_DEBUG: print('discovered speed char')
 				elif uuid == DIREX_UUID:
 					self.cli_direx_value_handle = value_handle
-					print('discovered direx char')
-				print('characteristic result: ', conn_handle, ' ', def_handle, ' ', value_handle, ' ', properties, ' ', uuid)
+					if WW_DEBUG: print('discovered direx char')
+				if WW_DEBUG: print('characteristic result: ', conn_handle, ' ', def_handle, ' ', value_handle, ' ', properties, ' ', uuid)
 
 		elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
 			# Called once service discovery is complete.
@@ -276,8 +280,7 @@ class mc_BLE:
 	def __cnxToMyPC(self):
 		self.bl.gap_connect(0, self.pier, 200000)
 
-	@staticmethod
-	def decodeAddress(addr):
+	def __decodeAddress(addr):
 		i = 0
 		while i < len(addr):
 			hexa = hex(addr[i])
