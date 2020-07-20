@@ -13,6 +13,7 @@ from BLE_Class import mc_BLE
 from BLE_Class import BLE_ATTR_STATUS
 from BLE_Class import BLE_ATTR_SPEED
 from BLE_Class import BLE_ATTR_DIREX
+from BLE_Class import BLE_ATTR_RESET
 
 from micropython import const
 
@@ -37,7 +38,6 @@ FLAG_UPDATE_DIREX = const(3)
 
 TASKID_MCTASK =const(0)
 TASKID_BLETASK =const(1)
-
 
 MC_Speed_Range = [30, 70]
 
@@ -157,7 +157,8 @@ class BLETask:
 				self.ble.update_ready = False
 				#reset
 				if self.ble.attr_update_dict[BLE_ATTR_RESET]:
-					mcahine.reset()
+					if WW_DEBUG: print('calling reset')
+					machine.reset()
 			else:
 				pass
 

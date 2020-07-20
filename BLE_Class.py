@@ -57,8 +57,8 @@ CUSTOM_DESIRED_DIREX_CHAR = (DIREX_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG
 RESET_UUID = ubluetooth.UUID('36ca78c0-ca32-11ea-87d0-0242ac130003')
 CUSTOM_DESIRED_RESET_CHAR = (RESET_UUID, ubluetooth.FLAG_WRITE)
 
-CUSTOM_MOTOR_CONTROL_SERVICE_UUID = (CUSTOM_MOTOR_CONTROL_SERVICE_UUID_UUID, (CUSTOM_STATUS_CHAR, CUSTOM_DESIRED_SPEED_CHAR, CUSTOM_DESIRED_DIREX_CHAR, CUSTOM_DESIRED_RESET_CHAR,),)
-SERVICE_LIST = (CUSTOM_MOTOR_CONTROL_SERVICE_UUID,)
+CUSTOM_MOTOR_CONTROL_SERVICE = (CUSTOM_MOTOR_CONTROL_SERVICE_UUID, (CUSTOM_STATUS_CHAR, CUSTOM_DESIRED_SPEED_CHAR, CUSTOM_DESIRED_DIREX_CHAR, CUSTOM_DESIRED_RESET_CHAR,),)
+SERVICE_LIST = (CUSTOM_MOTOR_CONTROL_SERVICE,)
 
 class mc_BLE:
 
@@ -104,7 +104,7 @@ class mc_BLE:
 				self.attr_update_dict[BLE_ATTR_SPEED] = 1
 			elif attr_handle == self.serv_direx_value_handle:
 				self.attr_update_dict[BLE_ATTR_DIREX] = 1
-			elif attr_handle = self.serv_reset_value_handle:
+			elif attr_handle == self.serv_reset_value_handle:
 				self.attr_update_dict[BLE_ATTR_RESET] = 1
 
 		elif event == _IRQ_CENTRAL_DISCONNECT:
@@ -123,7 +123,7 @@ class mc_BLE:
 			elif new_addr not in self.addr_list:
 					self.addr_list.append(new_addr)
 					print('suxes. addr_type = ', addr_type, 'addr = ', addr, 'adv_type = ', adv_type, ': ', adv_type_dict[adv_type], 'adv_data = ', adv_data)
-					decodeAddress(addr)
+					__decodeAddress(addr)
 					decodeAdvData(adv_data)
 		elif event == _IRQ_SCAN_DONE:
 			# Scan duration finished or manually stopped.
@@ -139,7 +139,7 @@ class mc_BLE:
 			# Called for each service found by gattc_discover_services().
 			conn_handle, start_handle, end_handle, uuid = data
 			if conn_handle == self.server_conn_handle:
-				if uuid == CUSTOM_MOTOR_CONTROL_SERVICE_UUID_UUID:
+				if uuid == CUSTOM_MOTOR_CONTROL_SERVICE_UUID:
 					self.bl.gattc_discover_characteristics(self.server_conn_handle, start_handle, end_handle)
 					
 		elif event == _IRQ_PERIPHERAL_DISCONNECT:
@@ -162,6 +162,9 @@ class mc_BLE:
 				elif uuid == DIREX_UUID:
 					self.cli_direx_value_handle = value_handle
 					if WW_DEBUG: print('discovered direx char')
+				elif uuid == RESET_UUID:
+					self.cli_reset_value_handle = value_handle
+					if WW_DEBUG: print('discovered reset char')
 				if WW_DEBUG: print('characteristic result: ', conn_handle, ' ', def_handle, ' ', value_handle, ' ', properties, ' ', uuid)
 
 		elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
@@ -250,6 +253,7 @@ class mc_BLE:
 		else:
 			self.bl.gattc_write(self.server_conn_handle, self.cli_status_value_handle, b'\x00', 1)
 
+	#need to change the way this is interpreted by Server for fwd to actually work
 	def client_writeDirex(self, fwd=True):
 		if self.is_server:
 			print('permission denied')
@@ -257,6 +261,11 @@ class mc_BLE:
 			self.bl.gattc_write(self.server_conn_handle, self.cli_direx_value_handle, b'\x01', 1)
 		else:
 			self.bl.gattc_write(self.server_conn_handle, self.cli_direx_value_handle, b'\x00', 1)
+
+	def client_forceReset(self):
+		if not self.is_server:
+			#anything written to this attribute will force a reset
+			self.bl.gattc_write(self.server_conn_handle, self.cli_reset_value_handle, b'\x00', 1)
 
 	def __stopScan(self):
 		self.bl.gap_scan(None)
