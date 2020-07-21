@@ -92,15 +92,17 @@ class MCTask:
 			if self.state == MCSTATE_SPEEDINGUP:
 				if self.mc.speed > (self.mc.target_speed - SPEED_THRESHOLD_BUF):
 					self.state = MCSTATE_RUNNING
-					pass
-				if self.cmd_list[0]._type == SPEED_CMD:
-					pass
-				else:
+				else: 
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
 					new_cmd == self.cmd_list.pop(0)
+					if new_cmd._type == SPEED_CMD:
+						#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
+						#if more than one speed cmd in the queue, they will flip-flop until current cmd is achieved
+						self.task_list.insert(1,new_cmd)
 					if new_cmd._type == STATUS_CMD:
 						self.mc.toggle()
+						self.last_state = self.state
 						self.state = MCSTATE_MOTOROFF
 					elif new_cmd._type == DIREX_CMD:
 						#change direx but still speeding up
@@ -111,14 +113,16 @@ class MCTask:
 					self.state = MCSTATE_RUNNING
 					#NOW MUST PASS TO GET CMD... MAYBE CALL RUN AGAIN if there is a cmd
 					pass
-				if self.cmd_list[0]._type == SPEED_CMD:
-					pass
 				else:
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
 					new_cmd == self.cmd_list.pop(0)
+					if new_cmd._type == SPEED_CMD:
+						#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
+						self.task_list.insert(1,new_cmd)
 					if new_cmd._type == STATUS_CMD:
 						self.mc.toggle()
+						self.last_state = self.state
 						self.state = MCSTATE_MOTOROFF
 					elif new_cmd._type == DIREX_CMD:
 						#change direx but still speeding up
@@ -130,7 +134,7 @@ class MCTask:
 				if new_cmd._type == STATUS_CMD:
 					if not new_cmd:
 						self.mc.toggle()
-						self.last_state = MCSTATE_RUNNING
+						self.last_state = self.state
 						self.state = MCSTATE_MOTOROFF
 					else:
 						if WW_DEBUG: print('motor already on')
@@ -143,14 +147,20 @@ class MCTask:
 				elif new_cmd._type == DIREX_CMD:
 					self.mc.changeDirex()
 
+			#off, so you only change if cmd is for status
 			elif self.state == MCSTATE_MOTOROFF:
 				new_cmd = self.cmd_list[0]
 				if new_cmd._type == STATUS_CMD:
-					if new_cmd:
+					#must add input here	
+					if new_cmd._input:
 						self.mc.toggle()
 						self.state = self.last_state
 					else:
 						if WW_DEBUG: print('motor already on')
+				else:
+					# this will screw up order of commands as defined by user. what you should 
+					# really do is find first instance of turn on cmd and move it to the front
+					self.cmd_list.append(new_cmd)
 				
 
 	#callback function that updates motor speed
