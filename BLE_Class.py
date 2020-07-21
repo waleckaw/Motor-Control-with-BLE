@@ -123,7 +123,7 @@ class mc_BLE:
 			elif new_addr not in self.addr_list:
 					self.addr_list.append(new_addr)
 					print('suxes. addr_type = ', addr_type, 'addr = ', addr, 'adv_type = ', adv_type, ': ', adv_type_dict[adv_type], 'adv_data = ', adv_data)
-					__decodeAddress(addr)
+					self.__decodeAddress(addr)
 					decodeAdvData(adv_data)
 		elif event == _IRQ_SCAN_DONE:
 			# Scan duration finished or manually stopped.
@@ -289,7 +289,7 @@ class mc_BLE:
 	def __cnxToMyPC(self):
 		self.bl.gap_connect(0, self.pier, 200000)
 
-	def __decodeAddress(addr):
+	def __decodeAddress(self, addr):
 		i = 0
 		while i < len(addr):
 			hexa = hex(addr[i])
