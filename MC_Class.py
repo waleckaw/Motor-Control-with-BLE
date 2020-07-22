@@ -3,15 +3,19 @@
 from machine import Pin, PWM, Timer
 from micropython import const 
 
+# toggle debug print statements
 WW_DEBUG = const(0)
 
+#Motor Constants
 FULL_DC = 1023
 FULL_ROTATION_TICKS = 368
 
-K_p = 10
+# Motor Control Constants
+K_p = 10 # Purposefully under-damped for slow response to validate state change behavior
 K_i = 0.1
 K_d = 0.2
 
+# class used to operate motor
 class MC:
 
 	# initialize Motor Controller - attributes include PWM frequency, PWM and direction pins to motor driver,
@@ -103,7 +107,4 @@ class MC:
 			newDCint = int(newDC)
 			self.duty_cycle=newDCint
 			self.setDC(DC=newDCint)
-
-	def __del__(self):
-		self.tim.deinit()
 

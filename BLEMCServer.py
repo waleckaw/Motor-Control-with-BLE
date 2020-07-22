@@ -17,7 +17,7 @@ from BLE_Class import BLE_ATTR_RESET
 
 from micropython import const
 
-#Toggle debug print statements
+# toggle debug print statements
 WW_DEBUG = const(0)
 
 # Motor Controller Constants
@@ -211,6 +211,8 @@ class BLETask:
 		#order of flags in flag_list must follow order of flag enumeration, so that flags can be set using flag ID's
 		self.flag_list = [Connection_Flag, Update_Status_Flag, Update_Desired_Speed_Flag, Update_Direx_Flag]
 		self.ble = mc_BLE(server_role=True)
+		self.ble.server_singleWriteDirexFWD()
+
 
 	# all tasks added must have a function called run
 	def run(self):
