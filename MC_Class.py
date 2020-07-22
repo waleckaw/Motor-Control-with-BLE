@@ -14,15 +14,15 @@ K_d = 0.2
 
 class MC:
 
+	# initialize Motor Controller - attributes include PWM frequency, PWM and direction pins to motor driver,
+	# interrupt pin to count encoder ticks, controller update interrupt timer, speed, target speed, and more
 	def __init__(self, freq=1500, DC=512):
 		self.frequency = freq
 		self.duty_cycle = 0
 		self.pwm = PWM(Pin(21), freq=self.frequency, duty=self.duty_cycle)
 		self.direx = Pin(22, Pin.OUT)
 		self.direx.off()
-
-		self.encoder_ticks_atm = 0
-
+		self.encoder_ticks_atm = 0 #atm = at the moment (since last check)
 		self.encoder = Pin(19, Pin.IN)
 		self.encoder.irq(trigger=Pin.IRQ_RISING, handler=self.addEncoderTick)
 
@@ -37,21 +37,22 @@ class MC:
 		self.target_speed = 0 #rpm
 		self.sum_error = 0
 
-		#self.speedCalcTimer = 
-
+	# allows user to adjust controller frequency from REPL
 	def setFreq(self, freq):
 		self.frequency=freq
-		# pwm.freq(self.frequency)
 
+	# set duty cycle to control output to motor
 	def setDC(self, DC):
-		if self.direx.value() == 0: #if direx is CCW IE direx pin is low
+		if self.direx.value() == 0: 
 			self.duty_cycle = DC
 			self.pwm.duty(self.duty_cycle)
-		else:					#if direx is CW IE direx pin is High
+		else:
 			self.duty_cycle = FULL_DC - DC
 			self.pwm.duty(self.duty_cycle)
 
-	def changeDirex(self): #if direx is CCW IE direx pin is low
+	# change direction of motor (CW/CCW). Also change duty cycle to fit
+	# direction/direx pin
+	def changeDirex(self): 
 		if self.direx.value() == 0: 
 			self.direx.on()
 			self.setDC(DC=self.duty_cycle)
@@ -59,6 +60,7 @@ class MC:
 			self.direx.off()
 			self.setDC(DC=(FULL_DC-self.duty_cycle))
 
+	# turn motor on/off
 	def toggle(self):
 		self.useControl(use=False)
 		if self.duty_cycle != 0:
@@ -70,36 +72,26 @@ class MC:
 		else:
 			self.useControl(use=True, speed=self.target_speed)
 
+	# toggle use of motor speed control. if control in use, also set desired speed
 	def useControl(self, use=False, speed=0): #rpm
 		self.use_control = use
 		#self.sum_error = 0
 		if use:
 			self.target_speed = speed
 
+	#callback that occurs when motor encoder registers a tick
 	def addEncoderTick(self, pin):
 		self.encoder_ticks_atm += 1
 
+	#callback that calculates speed and implements controller when periodic control timer expires
+	#speed: rpm = (ticks / 200 ms) (1 rev/ 368 ticks) (10*100 ms / 1 s) (60s / min)
 	def calcSpeed(self, pin):
-		#speed: rpm = (ticks / 200 ms) (1 rev/ 368 ticks) (10*100 ms / 1 s) (60s / min)
 		self.last_speed = self.speed
 		self.speed = 60*(self.encoder_ticks_atm*20)/FULL_ROTATION_TICKS #should be rpm
 		if WW_DEBUG: print(self.speed);
 		self.encoder_ticks_atm=0
-		
-		#printing stuff - will hurt controller, disable when u get close
-		# self.printct += 1
-		# if self.printct == 10:
-		# 	self.printct = 0
-		# 	print(self.speed)
-
-		#control stuff
 		if (self.use_control):
-			#if (self.direx.value() == 0): #if direx is CCW IE direx pin is LOW
-			#may only work going up
-			# /time fro derivative constant included in K_d
-			# if (self.target_speed > self.speed):
 			rpm_error = (self.target_speed - self.speed)
-			#damping
 			self.sum_error += rpm_error	
 			newDC = K_p * (rpm_error + (K_i * self.sum_error))
 			if (newDC > 1023):
@@ -108,12 +100,7 @@ class MC:
 			elif (newDC < 0):
 				newDC = 0
 				self.sum_error -= rpm_error
-			# else:
-			# 	rpm_error = (self.speed - self.target_speed)
-			# 	self.sum_error += rpm_error
-			# 	newDC = K_p * (rpm_error + (K_i * sum_error))
 			newDCint = int(newDC)
-			# print(newDCint) 
 			self.duty_cycle=newDCint
 			self.setDC(DC=newDCint)
 
