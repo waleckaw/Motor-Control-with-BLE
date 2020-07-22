@@ -8,7 +8,7 @@ WW_DEBUG = const(0)
 FULL_DC = 1023
 FULL_ROTATION_TICKS = 368
 
-K_p = 20
+K_p = 10
 K_i = 0.1
 K_d = 0.2
 

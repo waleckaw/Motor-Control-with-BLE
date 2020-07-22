@@ -78,7 +78,7 @@ class MCTask:
 	#BLEtask will only set update speed flags once connected
 	def run(self):
 		if WW_DEBUG: print('running MCTask, state = ', self.state);
-		if WW_DEBUG: print('cmd_queue =', self.cmd_list)
+		#if WW_DEBUG: print('cmd_queue =', self.cmd_list)
 		#task initial state - wait to take action until connected
 		if self.state == MCSTATE_IDLE: 
 			return
@@ -94,11 +94,12 @@ class MCTask:
 			if self.state == MCSTATE_SPEEDINGUP:
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
-				new_cmd == self.cmd_list.pop(0)
+				new_cmd = self.cmd_list.pop(0)
 				if new_cmd._type == SPEED_CMD:
 					#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
 					#if more than one speed cmd in the queue, they will flip-flop until current cmd is achieved
-					self.task_list.insert(1,new_cmd)
+					self.cmd_list.append(new_cmd)
+					if WW_DEBUG: print('cmd_list: ', self.cmd_list)
 				if new_cmd._type == STATUS_CMD:
 					self.mc.toggle()
 					self.last_state = self.state
@@ -106,30 +107,31 @@ class MCTask:
 				elif new_cmd._type == DIREX_CMD:
 					#change direx but still speeding up
 					#if using Bluetility, can't assume user will input 1
-					if self.direx != 0 and new_cmd._type == 0:
+					if self.direx != 0 and new_cmd._input == 0:
 						self.mc.changeDirex()
 						self.direx = 0
-					elif self.direx == 0 and new_cmd._type != 0:
+					elif self.direx == 0 and new_cmd._input != 0:
 						self.mc.changeDirex()
 						self.direx = 1
 
 			elif self.state == MCSTATE_SLOWINGDOWN:
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
-				new_cmd == self.cmd_list.pop(0)
+				new_cmd = self.cmd_list.pop(0)
 				if new_cmd._type == SPEED_CMD:
 					#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
-					self.task_list.insert(1,new_cmd)
+					self.cmd_list.append(new_cmd)
+					if WW_DEBUG: print('cmd_list: ', self.cmd_list)
 				if new_cmd._type == STATUS_CMD:
 					self.mc.toggle()
 					self.last_state = self.state
 					self.state = MCSTATE_MOTOROFF
 				elif new_cmd._type == DIREX_CMD:
 					#change direx but still speeding up
-					if self.direx != 0 and new_cmd._type == 0:
+					if self.direx != 0 and new_cmd._input == 0:
 						self.mc.changeDirex()
 						self.direx = 0
-					elif self.direx == 0 and new_cmd._type != 0:
+					elif self.direx == 0 and new_cmd._input != 0:
 						self.mc.changeDirex()
 						self.direx = 1
 
@@ -150,23 +152,23 @@ class MCTask:
 						self.state = MCSTATE_SLOWINGDOWN
 					self.mc.useControl(use=True, speed=new_cmd._input)
 				elif new_cmd._type == DIREX_CMD:
-					if self.direx != 0 and new_cmd._type == 0:
+					if self.direx != 0 and new_cmd._input == 0:
 						self.mc.changeDirex()
 						self.direx = 0
-					elif self.direx == 0 and new_cmd._type != 0:
+					elif self.direx == 0 and new_cmd._input != 0:
 						self.mc.changeDirex()
 						self.direx = 1
 
 			#off, so you only change if cmd is for status
 			elif self.state == MCSTATE_MOTOROFF:
-				new_cmd = self.cmd_list[0]
+				new_cmd = self.cmd_list.pop(0)
 				if new_cmd._type == STATUS_CMD:
 					#must add input here	
 					if new_cmd._input:
 						self.mc.toggle()
 						self.state = self.last_state
 					else:
-						if WW_DEBUG: print('motor already on')
+						if WW_DEBUG: print('motor already off')
 				else:
 					# this will screw up order of commands as defined by user. what you should 
 					# really do is find first instance of turn on cmd and move it to the front
