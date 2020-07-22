@@ -50,6 +50,7 @@ class MCTask:
 	SPEED_CMD = const(1)
 	DIREX_CMD = const(2)
 
+	#weird issue here. why do you need self to access it?
 	SPEED_THRESHOLD_BUF = 3
 
 	#intialize MCTask - state, MC() obj from MC_Class.py, and flags
@@ -94,46 +95,49 @@ class MCTask:
 			if self.state == MCSTATE_SPEEDINGUP:
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
-				new_cmd = self.cmd_list.pop(0)
-				if new_cmd._type == SPEED_CMD:
-					#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
-					#if more than one speed cmd in the queue, they will flip-flop until current cmd is achieved
-					self.cmd_list.append(new_cmd)
-					if WW_DEBUG: print('cmd_list: ', self.cmd_list)
-				if new_cmd._type == STATUS_CMD:
-					self.mc.toggle()
-					self.last_state = self.state
-					self.state = MCSTATE_MOTOROFF
-				elif new_cmd._type == DIREX_CMD:
-					#change direx but still speeding up
-					#if using Bluetility, can't assume user will input 1
-					if self.direx != 0 and new_cmd._input == 0:
-						self.mc.changeDirex()
-						self.direx = 0
-					elif self.direx == 0 and new_cmd._input != 0:
-						self.mc.changeDirex()
-						self.direx = 1
+				if self.cmd_list[0]._type != SPEED_CMD:
+				# if new_cmd._type == SPEED_CMD:
+				# 	#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
+				# 	#if more than one speed cmd in the queue, they will flip-flop until current cmd is achieved
+				# 	self.cmd_list.append(new_cmd)
+				# 	if WW_DEBUG: print('cmd_list: ', self.cmd_list)
+					new_cmd = self.cmd_list.pop(0)
+					if new_cmd._type == STATUS_CMD:
+						self.mc.toggle()
+						self.last_state = self.state
+						self.state = MCSTATE_MOTOROFF
+					elif new_cmd._type == DIREX_CMD:
+						#change direx but still speeding up
+						#if using Bluetility, can't assume user will input 1
+						if self.direx != 0 and new_cmd._input == 0:
+							self.mc.changeDirex()
+							self.direx = 0
+						elif self.direx == 0 and new_cmd._input != 0:
+							self.mc.changeDirex()
+							self.direx = 1
 
 			elif self.state == MCSTATE_SLOWINGDOWN:
 				#must create mc_class command that accepts on/off input (not just toggle)
 				#maybe one for direx that aaccepts input as well
-				new_cmd = self.cmd_list.pop(0)
-				if new_cmd._type == SPEED_CMD:
-					#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
-					self.cmd_list.append(new_cmd)
-					if WW_DEBUG: print('cmd_list: ', self.cmd_list)
-				if new_cmd._type == STATUS_CMD:
-					self.mc.toggle()
-					self.last_state = self.state
-					self.state = MCSTATE_MOTOROFF
-				elif new_cmd._type == DIREX_CMD:
-					#change direx but still speeding up
-					if self.direx != 0 and new_cmd._input == 0:
-						self.mc.changeDirex()
-						self.direx = 0
-					elif self.direx == 0 and new_cmd._input != 0:
-						self.mc.changeDirex()
-						self.direx = 1
+				
+				# if new_cmd._type == SPEED_CMD:
+				# 	#put cmd at index 1 so run takes next cmd next time but then tries speed cmd again 
+				# 	self.cmd_list.append(new_cmd)
+				# 	if WW_DEBUG: print('cmd_list: ', self.cmd_list)
+				if self.cmd_list[0]._type != SPEED_CMD:
+					new_cmd = self.cmd_list.pop(0)
+					if new_cmd._type == STATUS_CMD:
+						self.mc.toggle()
+						self.last_state = self.state
+						self.state = MCSTATE_MOTOROFF
+					elif new_cmd._type == DIREX_CMD:
+						#change direx but still speeding up
+						if self.direx != 0 and new_cmd._input == 0:
+							self.mc.changeDirex()
+							self.direx = 0
+						elif self.direx == 0 and new_cmd._input != 0:
+							self.mc.changeDirex()
+							self.direx = 1
 
 			#running, so you can now take speed cmds
 			elif self.state == MCSTATE_RUNNING:
@@ -161,7 +165,7 @@ class MCTask:
 
 			#off, so you only change if cmd is for status
 			elif self.state == MCSTATE_MOTOROFF:
-				new_cmd = self.cmd_list.pop(0)
+				new_cmd = self.cmd_list[0]
 				if new_cmd._type == STATUS_CMD:
 					#must add input here	
 					if new_cmd._input:
@@ -169,23 +173,22 @@ class MCTask:
 						self.state = self.last_state
 					else:
 						if WW_DEBUG: print('motor already off')
+					del self.cmd_list[0]
 				else:
-					# this will screw up order of commands as defined by user. what you should 
-					# really do is find first instance of turn on cmd and move it to the front
-					self.cmd_list.append(new_cmd)
-				
+					# cmd_type_list = [a._type for a in self.cmd_list]
+					# #if there is a command to turn it back on that is not in front, fast forward it to the front
+					try:
+						cmd_to_remove = next(a for a in self.cmd_list if a._type == STATUS_CMD and a._input > 0)
+					except StopIteration:
+						cmd_to_remove = None
+					if cmd_to_remove is not None:
+						self.cmd_list.remove(cmd_to_remove)
+						self.mc.toggle()
+						self.state = self.last_state
 
-	#callback function that updates motor speed
-	# def updateSpeed(self, desired_speed=0):
-	# 	if WW_DEBUG: print('updateSpeed being called. desired_speed = ', desired_speed)
-	# 	if desired_speed >= MC_Speed_Range[0] and desired_speed <= MC_Speed_Range[1]:
-	# 		if (desired_speed > self.mc.speed):
-	# 			self.state = MCSTATE_SPEEDINGUP
-	# 		else:
-	# 			self.state = MCSTATE_SLOWINGDOWN
-	# 		self.mc.useControl(use=True, speed=desired_speed)
-	# 	else:
-	# 		if WW_DEBUG: print('desired speed not passed in');
+
+					#may jumble the order
+					#self.cmd_list.append(new_cmd)
 
 	def updateSpeed(self, desired_speed=0):
 		#could make this aa lambda function to post to the list
@@ -193,20 +196,19 @@ class MCTask:
 		if desired_speed >= MC_Speed_Range[0] and desired_speed <= MC_Speed_Range[1]:
 			new_spd_cmd = MCTask.cmd(SPEED_CMD, desired_speed)
 			self.cmd_list.append(new_spd_cmd)
+			if WW_DEBUG: print('cmd_list: ', self.cmd_list)
 		else:
 			if WW_DEBUG: print('desired speed not passed in, must be between 30 and 70');
 
 	#callback function that turns motor ON/OFF
 	def updateStatus(self, desired_status):
 		if WW_DEBUG: print('calling updateStatus')
-		#self.mc.toggle()
 		new_status_cmd = MCTask.cmd(STATUS_CMD, desired_status)
 		self.cmd_list.append(new_status_cmd)
 
 	#callback function that updates motor direction
 	def updateDirex(self, desired_direx):
 		if WW_DEBUG: print('calling updateDirex')
-		# self.mc.changeDirex()
 		new_direx_cmd = MCTask.cmd(DIREX_CMD, desired_direx)
 		self.cmd_list.append(new_direx_cmd)
 

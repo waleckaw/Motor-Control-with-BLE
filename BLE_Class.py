@@ -9,6 +9,7 @@
 import ubluetooth
 import utime
 import struct
+import utime
 
 from micropython import const
 _IRQ_CENTRAL_CONNECT = const(1)
@@ -254,7 +255,7 @@ class mc_BLE:
 	def client_writeDirex(self, fwd=True):
 		if self.is_server:
 			print('permission denied')
-		elif fwd:
+		elif fwd: #fwd = ccw
 			self.bl.gattc_write(self.server_conn_handle, self.cli_direx_value_handle, b'\x01', 1)
 		else:
 			self.bl.gattc_write(self.server_conn_handle, self.cli_direx_value_handle, b'\x00', 1)
@@ -293,6 +294,31 @@ class mc_BLE:
 			print(hexa, end = ' ') 
 			i += 1
 		print('')
+
+	def randomSpeedScript(self):
+		self.client_writeStatus(False)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(43)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(30)
+		utime.sleep_ms(50)
+		self.client_writeDirex(False)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(43)
+		utime.sleep_ms(50)
+		self.client_writeDirex(True)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(30)
+		utime.sleep_ms(50)
+		self.client_writeDirex(False)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(43)
+		utime.sleep_ms(50)
+		self.client_writeDirex(True)
+		utime.sleep_ms(50)
+		self.client_writeSpeed(30)		
+		utime.sleep_ms(50)
+		self.client_writeStatus(True)
 
 #following three Encode methods taken form uPython forum
 
