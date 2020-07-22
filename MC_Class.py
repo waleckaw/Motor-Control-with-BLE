@@ -73,7 +73,7 @@ class MC:
 	def useControl(self, use=False, speed=0): #rpm
 		self.use_control = use
 		#self.sum_error = 0
-		if (self.use_control):
+		if use:
 			self.target_speed = speed
 
 	def addEncoderTick(self, pin):

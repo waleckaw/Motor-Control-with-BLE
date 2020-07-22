@@ -222,15 +222,12 @@ class mc_BLE:
 	def server_readMotorCharacteristic(self, key=None):
 		if self.is_server:
 			ret = self.bl.gatts_read(self.attr_handle_dict[key])
-			if WW_DEBUG: print('this is the data before decoding: ', ret)
+			#if WW_DEBUG: print('this is the data before decoding: ', ret)
 			give = int.from_bytes(ret, 'big')
-			if WW_DEBUG: print('this is ret: ', give)
+			#if WW_DEBUG: print('this is ret: ', give)
 			return give
 		else:
 			print('permission denied')
-
-	# def writeDesiredSpeed(self, inpu):
-	# 	self.bl.gatts_write(self._desired_speed_handle, struct.pack("<h", int(inpu)))
 
 	def client_writeSpeed(self, inpu):
 		if self.is_server:
