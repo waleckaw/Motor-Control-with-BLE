@@ -4,6 +4,7 @@ import ubluetooth
 import utime
 import struct
 import utime
+import ubinascii
 
 from micropython import const
 
@@ -30,10 +31,6 @@ adv_type_dict = {0x00: 'ADV_IND - connectable and scannable undirected advertisi
 0x02: 'ADV_SCAN_IND - scannable undirected advertising',
 0x03: 'ADV_NONCONN_IND - non-connectable undirected advertising',
 0x04: 'SCAN_RSP - scan response'}
-
-# device MAC address - only server addr required for connection. can be discovered using __get_info
-_SERVER_ADDR = b'$b\xab\xf9\x0bR'
-_CLIENT_ADDR = b'$b\xab\xf9\x17\xd6'
 
 #attribute indicators
 BLE_ATTR_STATUS = const(0)
@@ -65,9 +62,9 @@ class mc_BLE:
 	# initiallize BLE for MC - attributes include list of discovered devices (MAC addresses), pier 
 	# address of desired server, BLE obj from ubluetooth library, connection status, role as server/client
 	# attribute update dictionary (if server), and attrivute handles (if server)
-	def __init__(self, pier_addr=_SERVER_ADDR, server_role=False):
+	def __init__(self, server_role=False):
 		self.addr_list = []
-		self.pier = pier_addr
+		self.pier = None
 		self.bl = ubluetooth.BLE()
 		self.bl.active(True)
 		self.bl.irq(handler=self.bt_irq)
@@ -90,8 +87,8 @@ class mc_BLE:
 
 	# bt_irq handles interrupts from BLE.irq with specific BLE event and data input
 	# that it assigns to to variables (ie: conn_handle, addr_type, addr, attr handle, etc)
-	# once desired pier address (defined by _SERVER_ADDR above) is discovered, automatic connection follows this
-	# sequence: scan -> connect -> discover MC Service -> discover MC Service characteristics -> register characteristic handles
+	# once pier with correct adv data key is discovered is discovered, automatic connection follows sequence below
+	# scan -> connect -> discover MC Service -> discover MC Service characteristics -> register characteristic handles
 	# characteristic attr handles/connection complete
 	# above process performed by Central/Client if multiple BLE devices are used
 	def bt_irq(self, event, data):
@@ -126,15 +123,16 @@ class mc_BLE:
 		# pier addr (that of the BLEMCServer), connect to peripheral and stop scanning
 		elif event == _IRQ_SCAN_RESULT:
 			addr_type, addr, adv_type, rssi, adv_data = data
-			new_addr = bytes(addr)
-			if addr == self.pier:
-				self.__connectToServer()
-				self.__stopScan()
-			elif new_addr not in self.addr_list:
+			new_addr = bytes(addr) # copy to use outside of interrupt
+			if new_addr not in self.addr_list:
 				self.addr_list.append(new_addr)
 				print('Device discovered. addr_type = ', addr_type, 'addr = ', addr, 'adv_type = ', adv_type, ': ', adv_type_dict[adv_type], 'adv_data = ', adv_data)
-				self.__decodeAddress(addr)
-				decodeAdvData(adv_data)
+				printAsReadableHex(adv_data)
+				decodeAddress(addr)
+			if decodeAdvDataForKey(bytes(adv_data)):
+				self.pier = addr
+				self.__connectToServer()
+				self.__stopScan()
 
 		# connection established with peripheral - update server class attribute server_conn_handle 
 		# and discover services present
@@ -173,7 +171,6 @@ class mc_BLE:
 				elif uuid == RESET_UUID:
 					self.cli_reset_value_handle = value_handle
 					if WW_DEBUG: print('discovered reset char')
-				if WW_DEBUG: print('characteristic result: ', conn_handle, ' ', def_handle, ' ', value_handle, ' ', properties, ' ', uuid)
 
 		# discovery of service characteristics complete. Prompt user (client side) to begin writing values
 		elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
@@ -283,85 +280,54 @@ class mc_BLE:
 			#anything written to this attribute will force a reset
 			self.bl.gattc_write(self.server_conn_handle, self.cli_reset_value_handle, b'\x00', 1)
 
-	# internal method to stop scan - not meant for use in terminal by client
+	# internal method to stop scan
 	def __stopScan(self):
 		self.bl.gap_scan(None)
 
 	# figure out if reply data even necessary
-	def advertise(self, reply_data=b'\x55\x99\x33\x22'):
-		self.bl.gap_advertise(interval_us=40000, adv_data=advEncodeName('WW Server'), resp_data=reply_data, connectable=True)
+	def advertise(self):
+		self.bl.gap_advertise(interval_us=40000, adv_data=advEncodeName('MC Server'), connectable=True)
 
 	# internal method that stops peripheral (Server) from advertising
 	def __stopAdvertising(self):
 		self.bl.gap_advertise(interval_us=None)
-
-	# # internal method that connects BLE central to peripheral with given address
-	# def __connect(self, address):
-	# 	self.bl.gap_connect(addr=address)
 
 	# internal method that connects BLE central to peripheral - to be called after discovery of
 	# desired peripheral
 	def __connectToServer(self):
 		self.bl.gap_connect(0, self.pier, 200000)
 
-	# FIGURE OUT IF YOU NEED CONNECT AND CONNECTTOSERVER
-	def __decodeAddress(self, addr):
-		i = 0
-		while i < len(addr):
-			hexa = hex(addr[i])
-			print(hexa, end = ' ') 
-			i += 1
-		print('')
-
-	def randomSpeedScript(self):
-		if self.is_server:
-			pass
-		else:
-			self.client_writeStatus(False)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(43)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(30)
-			utime.sleep_ms(50)
-			self.client_writeDirex(False)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(43)
-			utime.sleep_ms(50)
-			self.client_writeDirex(True)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(30)
-			utime.sleep_ms(50)
-			self.client_writeDirex(False)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(43)
-			utime.sleep_ms(50)
-			self.client_writeDirex(True)
-			utime.sleep_ms(50)
-			self.client_writeSpeed(30)		
-			utime.sleep_ms(50)
-			self.client_writeStatus(True)
-
+	# deactivate BLE upon deletion
 	def __del__(self):
 		self.bl.active(False)
 
-#following three Encode methods taken form uPython forum
-
-# @staticmethod
+# encode data into BLE advertising packet format
 def advEncode(adv_type, value):
     return bytes((len(value) + 1, adv_type,)) + value
 
-# @staticmethod
+# encode name (str) as adv advertising packet
 def advEncodeName(name):
     return advEncode(const(0x09), name.encode())
 
-# @staticmethod
-def advEncodeServiceData(data):
-	return advEncode(const(0x16), data.encode())
+# print string of hex/ascii as sepated hex bytes
+def printAsReadableHex(data):
+	i = 0
+	while i < len(data):
+		hexa = hex(data[i])
+		print(hexa, end = ' ') 
+		i += 1
+	print('')
 
-# class connectable ble: - - - >>>make this a thing, its a good idea (don't just put adv data, put everything else)
+# print BLE mac address as sequence of hex bytes
+def decodeAddress(addr):
+	print('-----------')
+	print('address in hex:')
+	printAsReadableHex(addr)
+	print('-----------')
 	
-# @staticmethod
-def decodeAdvData(raw_adv_data):
+# separate and print length/type/value of BLE advertising data packets from discovered devices
+def decodeAdvDataForKey(raw_adv_data):
+	print('discovered adv data:')
 	total_len = len(raw_adv_data)
 	ind = 0
 	while total_len > 0:
@@ -371,11 +337,15 @@ def decodeAdvData(raw_adv_data):
 		sn_type = raw_adv_data[ind]
 		ind += 1
 		print('adv_type: ', sn_type)
-		sn_data = raw_adv_data[ind : sn_length+1]
-		print('adv_data: ', sn_data)
+		sn_data = raw_adv_data[ind : ind + sn_length+1]
+		print('adv_data chunk: ', sn_data)
+		print('adv_data chunk hex: ', end = ' ') 
+		printAsReadableHex(sn_data)
 		ind +=sn_length-1
 		total_len -= (sn_length+1)
 		print('-----------')
+		if sn_data == b'MC Server':
+			return True
 
 
 

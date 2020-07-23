@@ -215,6 +215,8 @@ class BLETask:
 
 
 	# all tasks added must have a function called run
+	# BLETask operation - checks for connection to switch to connected state, then checks for BLE attribute updates
+	# (writes from client) and posts appropriate flag to be operated on by MCTask
 	def run(self):
 		if WW_DEBUG: print('running BLETask');
 		if self.state == BLESTATE_NOTCONNECTED:
