@@ -10,10 +10,10 @@ from WWsched import flag
 from MC_Class import MC
 from BLE_Class import mc_BLE
 
-from BLE_Class import _BLE_ATTR_STATUS
-from BLE_Class import _BLE_ATTR_SPEED
-from BLE_Class import _BLE_ATTR_DIREX
-from BLE_Class import _BLE_ATTR_RESET
+from BLE_Class import BLE_ATTR_STATUS
+from BLE_Class import BLE_ATTR_SPEED
+from BLE_Class import BLE_ATTR_DIREX
+from BLE_Class import BLE_ATTR_RESET
 
 from micropython import const
 
@@ -223,28 +223,28 @@ class BLETask:
 			if self._ble.cli_serv_get_connection_status():
 				self._state = _BLESTATE_CONNECTED
 				if _WW_DEBUG: print('connection!!! in BLETask run')
-				self._flag_list[_BLE_ATTR_STATUS].setFlag()
+				self._flag_list[BLE_ATTR_STATUS].set_flag()
 		# check if an attribute has been written by client, then post command to MC_Task
 		if (self._state == _BLESTATE_CONNECTED):
 			if self._ble._update_ready:
 				# status (ON/OFF)
-				if self._ble._attr_update_dict[_BLE_ATTR_STATUS]:
-					des_status = self._ble.server_read_motor_characteristic(_BLE_ATTR_STATUS)
-					self._flag_list[_FLAG_UPDATE_STATUS].setFlag(inp_param=des_status)
-					self._ble._attr_update_dict[_BLE_ATTR_STATUS] = 0 # unset update indicator
+				if self._ble._attr_update_dict[BLE_ATTR_STATUS]:
+					des_status = self._ble.server_read_motor_characteristic(BLE_ATTR_STATUS)
+					self._flag_list[_FLAG_UPDATE_STATUS].set_flag(inp_param=des_status)
+					self._ble._attr_update_dict[BLE_ATTR_STATUS] = 0 # unset update indicator
 				#speed
-				if self._ble._attr_update_dict[_BLE_ATTR_SPEED]:
-					des_speed = self._ble.server_read_motor_characteristic(_BLE_ATTR_SPEED)
-					self._flag_list[_FLAG_UPDATE_SPEED].setFlag(inp_param=des_speed)
-					self._ble._attr_update_dict[_BLE_ATTR_SPEED] = 0
+				if self._ble._attr_update_dict[BLE_ATTR_SPEED]:
+					des_speed = self._ble.server_read_motor_characteristic(BLE_ATTR_SPEED)
+					self._flag_list[_FLAG_UPDATE_SPEED].set_flag(inp_param=des_speed)
+					self._ble._attr_update_dict[BLE_ATTR_SPEED] = 0
 				#direx
-				if self._ble._attr_update_dict[_BLE_ATTR_DIREX]:
-					des_direx = self._ble.server_read_motor_characteristic(_BLE_ATTR_DIREX)
-					self._flag_list[_FLAG_UPDATE_DIREX].setFlag(inp_param=des_direx)
-					self._ble._attr_update_dict[_BLE_ATTR_DIREX] = 0
+				if self._ble._attr_update_dict[BLE_ATTR_DIREX]:
+					des_direx = self._ble.server_read_motor_characteristic(BLE_ATTR_DIREX)
+					self._flag_list[_FLAG_UPDATE_DIREX].set_flag(inp_param=des_direx)
+					self._ble._attr_update_dict[BLE_ATTR_DIREX] = 0
 				self._ble._update_ready = False
 				#reset
-				if self._ble._attr_update_dict[_BLE_ATTR_RESET]:
+				if self._ble._attr_update_dict[BLE_ATTR_RESET]:
 					if _WW_DEBUG: print('calling reset')
 					machine.reset()
 
@@ -256,8 +256,8 @@ def coopSchedScript():
 	mt = MCTask()
 	bt = BLETask()
 	# task intervals must be higher than sys tick interval
-	scheduler.addTask(mt, 180) #30
-	scheduler.addTask(bt, 60) #30
+	scheduler.add_task(mt, 180) #30
+	scheduler.add_task(bt, 60) #30
 	scheduler.run()
 
 

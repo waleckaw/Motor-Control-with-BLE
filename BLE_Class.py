@@ -33,10 +33,10 @@ adv_type_dict = {0x00: 'ADV_IND - connectable and scannable undirected advertisi
 0x04: 'SCAN_RSP - scan response'}
 
 #attribute indicators
-_BLE_ATTR_STATUS = const(0)
-_BLE_ATTR_SPEED = const(1)
-_BLE_ATTR_DIREX = const(2)
-_BLE_ATTR_RESET = const(3)
+BLE_ATTR_STATUS = const(0)
+BLE_ATTR_SPEED = const(1)
+BLE_ATTR_DIREX = const(2)
+BLE_ATTR_RESET = const(3)
 
 # V1 UUID's below generated using: https://www.uuidgenerator.net
 # Bluetooth UUID of motor control service
@@ -72,13 +72,13 @@ class mc_BLE:
 		self._is_server=server_role
 		if server_role:
 			self._update_ready=False
-			self._attr_update_dict = {_BLE_ATTR_STATUS: 0, _BLE_ATTR_SPEED: 0, _BLE_ATTR_DIREX: 0, _BLE_ATTR_RESET: 0}
+			self._attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0, BLE_ATTR_RESET: 0}
 		self.get_info()
 
 		if server_role:
 			# here, serv_ refers to server, not service
 			((self._server_status_value_handle, self._server_speed_value_handle, self._server_direx_value_handle, self._server_reset_value_handle),) = self._bl.gatts_register_services(_SERVICE_LIST)
-			self._attr_handle_dict = {_BLE_ATTR_STATUS: self._server_status_value_handle, _BLE_ATTR_SPEED: self._server_speed_value_handle, _BLE_ATTR_DIREX: self._server_direx_value_handle, _BLE_ATTR_RESET: self._server_reset_value_handle}
+			self._attr_handle_dict = {BLE_ATTR_STATUS: self._server_status_value_handle, BLE_ATTR_SPEED: self._server_speed_value_handle, BLE_ATTR_DIREX: self._server_direx_value_handle, BLE_ATTR_RESET: self._server_reset_value_handle}
 			# peripheral (in this case, server) will advertise indefinitely until discovered by desired central
 			self.server_advertise()
 		else:
@@ -112,13 +112,13 @@ class mc_BLE:
 			self._update_ready = True
 			conn_handle, attr_handle = data
 			if attr_handle == self._server_status_value_handle:
-				self._attr_update_dict[_BLE_ATTR_STATUS] = 1
+				self._attr_update_dict[BLE_ATTR_STATUS] = 1
 			elif attr_handle == self._server_speed_value_handle:
-				self._attr_update_dict[_BLE_ATTR_SPEED] = 1
+				self._attr_update_dict[BLE_ATTR_SPEED] = 1
 			elif attr_handle == self._server_direx_value_handle:
-				self._attr_update_dict[_BLE_ATTR_DIREX] = 1
+				self._attr_update_dict[BLE_ATTR_DIREX] = 1
 			elif attr_handle == self._server_reset_value_handle:
-				self._attr_update_dict[_BLE_ATTR_RESET] = 1
+				self._attr_update_dict[BLE_ATTR_RESET] = 1
 
 		# central has discovered a peripheral during scan - if peripheral's addr matches desired 
 		# pier addr (that of the BLEMCServer), connect to peripheral and stop scanning
