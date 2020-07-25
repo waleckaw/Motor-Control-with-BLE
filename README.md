@@ -21,7 +21,21 @@ Hardware:
 
 add links to photo of:
 - setup
+
+<img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8885.JPG" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+
 - esp32
+
+<img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/doit-esp-wroom-32-devkit.jpg" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+
 - motor
-- motor driver 
+
+<img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8888.JPG" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+
+- motor driver - SN754410 Quadruple Half-H Driver
+https://www.ti.com/lit/ds/symlink/sn754410.pdf
+
+<img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/h-bridge-sn754410.jpg" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+
+
 
