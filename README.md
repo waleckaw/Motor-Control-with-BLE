@@ -1,7 +1,6 @@
 #esp32_BLE_MotorControl
 
-Bluetooth Low Energy remote control for DC motor. Written in Python for 2x Espressif ESP32-WROOM-32 series MCU's running MicroPython build: **esp32-idf3-20200616-unstable-v1.12-538-gb4d0d7bf0.bin**
-which can be downloaded here: https://micropython.org/download/esp32/ at the time of creation of this document (7/24/20)
+Bluetooth Low Energy remote control for DC motor. Written in Python for 2x Espressif ESP32-WROOM-32 series MCU's running MicroPython build: ([**esp32-idf3-20200616-unstable-v1.12-538-gb4d0d7bf0.bin**](https://micropython.org/download/esp32/))
 
 Demo:
 -----
@@ -19,23 +18,39 @@ Features:
 Hardware:
 ---------
 
-add links to photo of:
 - setup
 
+<!-- </br>
 <img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8885.JPG" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+</br> -->
 
-- esp32
+![alt text](/media/IMG_8885.JPG)
 
+- ([esp32-WROOM-32D](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf))
+
+<!-- </br>
 <img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/doit-esp-wroom-32-devkit.jpg" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+</br> -->
 
-- motor
+![alt text](/media/doit-esp-wroom-32-devkit.jpg)
 
+- ([25mm geared encoder motor](https://forum.makeblock.com/t/information-about-25mm-dc-encoder-motor/10791))
+
+<!-- </br>
 <img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8888.JPG" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+</br> -->
 
-- motor driver - SN754410 Quadruple Half-H Driver
+![alt text](/media/IMG_8888.JPG)
+
+- ([motor driver](https://www.ti.com/lit/ds/symlink/sn754410.pdf)) - SN754410 Quadruple Half-H Driver
 https://www.ti.com/lit/ds/symlink/sn754410.pdf
 
+<!-- </br>
 <img src="https://raw.githubusercontent.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/h-bridge-sn754410.jpg" width="80%" height="80%" alt="X_Nucleo_IDB05A1_mbed_pinout_v1"/>
+</br> -->
+
+![alt text](/media/h-bridge-sn754410.jpg)
+
 
 
 
