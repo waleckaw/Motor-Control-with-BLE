@@ -22,15 +22,15 @@ Hardware:
 
 ![alt text](/media/IMG_8885.JPG)
 
-- ([esp32-WROOM-32D](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf =80x80))
+- ([esp32-WROOM-32D](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf =30x30))
 
 ![alt text](/media/doit-esp-wroom-32-devkit.jpg)
 
-- ([25mm geared encoder motor](https://forum.makeblock.com/t/information-about-25mm-dc-encoder-motor/10791 =80x80))
+- ([25mm geared encoder motor](https://forum.makeblock.com/t/information-about-25mm-dc-encoder-motor/10791 =30x30))
 
 ![alt text](/media/IMG_8888.JPG)
 
-- Motor Driver - ([SN754410 Quadruple Half-H Driver](https://www.ti.com/lit/ds/symlink/sn754410.pdf =80x80))
+- Motor Driver - ([SN754410 Quadruple Half-H Driver](https://www.ti.com/lit/ds/symlink/sn754410.pdf =30x30))
 https://www.ti.com/lit/ds/symlink/sn754410.pdf
 
 ![alt text](/media/h-bridge-sn754410.jpg)
