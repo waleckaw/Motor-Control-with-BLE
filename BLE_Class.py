@@ -5,6 +5,7 @@ import utime
 import struct
 import utime
 import ubinascii
+from machine import Pin
 
 from micropython import const
 
@@ -55,6 +56,8 @@ _CUSTOM_DESIRED_RESET_CHAR = (_RESET_UUID, ubluetooth.FLAG_WRITE)
 _CUSTOM_MOTOR_CONTROL_SERVICE = (_CUSTOM_MOTOR_CONTROL_SERVICE_UUID, (_CUSTOM_STATUS_CHAR, _CUSTOM_DESIRED_SPEED_CHAR, _CUSTOM_DESIRED_DIREX_CHAR, _CUSTOM_DESIRED_RESET_CHAR,),)
 _SERVICE_LIST = (_CUSTOM_MOTOR_CONTROL_SERVICE,)
 
+_LED_CONN_SLEEP_TIME = const(170)
+
 # class used to operate BLE and send commands to motor controller (client) or receive 
 # commands and indicate them to motor controller (Server)
 class mc_BLE:
@@ -84,6 +87,7 @@ class mc_BLE:
 		else:
 			# central (in this case, client) will scan indefinitely until it discovers desired peripheral
 			self.client_scan()
+		self._led=Pin(2,Pin.OUT)
 
 	# bt_irq handles interrupts from BLE.irq with specific BLE event and data input
 	# that it assigns to to variables (ie: conn_handle, addr_type, addr, attr handle, etc)
@@ -98,12 +102,14 @@ class mc_BLE:
 			if _WW_DEBUG: print('connection from central')
 			self._connected = True
 			self.server_stop_advertising()
+			self._blink_led()
 
 		# A central has disconnected from this peripheral (in this case, server) - resume 
 		# advertising to reconnect to central (client) when available
 		elif event == _IRQ_CENTRAL_DISCONNECT:
 			self._connected = False
 			self.server_advertise()
+			self._blink_led(disc=True)
 
 		# A central has written to this characteristic - change correspoding entry in
 		# attr_update_dict to 1 (used by event-checker in BLEMCServer)
@@ -142,6 +148,7 @@ class mc_BLE:
 			if _WW_DEBUG: print('peripheral connect')
 			self._connected = True
 			self._bl.gattc_discover_services(self._server_conn_handle)
+			self._blink_led()
 
 		# connection to peripheral lost - resume scan until desired peripheral comes back online/in range
 		elif event == _IRQ_PERIPHERAL_DISCONNECT:
@@ -150,6 +157,7 @@ class mc_BLE:
 			self._addr_list.clear()
 			self._connected = False
 			self.client_scan()
+			self._blink_led(disc=True)
 
 		# central has discovered a service of paired peripheral - discover service characteristics
 		elif event == _IRQ_GATTC_SERVICE_RESULT:
@@ -303,6 +311,24 @@ class mc_BLE:
 	# desired peripheral
 	def _client_autoconnect_to_server(self):
 		self._bl.gap_connect(0, self._pier, 200000)
+
+	def _blink_led(self, disc=False):
+		self._led.value(1)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(0)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(1)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(0)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(1)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(0)
+		utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+		self._led.value(1)
+		if disc:
+			utime.sleep_ms(_LED_CONN_SLEEP_TIME)
+			self._led.value(0)
 
 	# deactivate BLE upon deletion
 	def de_init(self):
