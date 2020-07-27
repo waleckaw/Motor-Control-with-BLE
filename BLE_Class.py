@@ -101,7 +101,6 @@ class mc_BLE:
 		if event == _IRQ_CENTRAL_CONNECT:
 			if _WW_DEBUG: print('connection from central')
 			self._connected = True
-			self.server_stop_advertising()
 			self._blink_led()
 
 		# A central has disconnected from this peripheral (in this case, server) - resume 

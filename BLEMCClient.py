@@ -22,21 +22,45 @@ import utime
 
 _e = mc_BLE()
 
-def random_func():
+gl_cmd_direction = True
+
+def cmd_speed(spd=30):
+	_e.client_write_speed(spd)
+
+def cmd_status(sta=True):
+	_e.client_write_status(sta)
+
+def cmd_direx(drx=True):
+	_e.client_write_direx(drx)
+
+def switch_direx():
+	global gl_cmd_direction
+	if gl_cmd_direction:
+		_e.client_write_direx(False)
+		gl_cmd_direction = False
+	else:
+		_e.client_write_direx(True)
+		gl_cmd_direction = True
+
+
+def reset_server():
+	_e.client_force_server_reset()
+
+def random_movement():
 	_e.client_write_status(False)
 	utime.sleep_ms(50)
-	_e.client_read_status()
+	# _e.client_read_status()
+	# utime.sleep_ms(50)
+	_e.client_write_speed(70)
 	utime.sleep_ms(50)
-	_e.client_write_speed(43)
-	utime.sleep_ms(50)
-	_e.client_read_speed()
-	utime.sleep_ms(50)
+	# _e.client_read_speed()
+	# utime.sleep_ms(50)
 	_e.client_write_speed(30)
 	utime.sleep_ms(50)
 	_e.client_write_direx(False)
 	utime.sleep_ms(50)
-	_e.client_read_direx()
-	utime.sleep_ms(50)
+	# _e.client_read_direx()
+	# utime.sleep_ms(50)
 	_e.client_write_speed(43)
 	utime.sleep_ms(50)
 	_e.client_write_direx(True)
@@ -45,7 +69,7 @@ def random_func():
 	utime.sleep_ms(50)
 	_e.client_write_direx(False)
 	utime.sleep_ms(50)
-	_e.client_write_speed(43)
+	_e.client_write_speed(70)
 	utime.sleep_ms(50)
 	_e.client_write_direx(True)
 	utime.sleep_ms(50)
