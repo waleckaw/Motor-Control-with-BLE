@@ -43,12 +43,18 @@ BLE_ATTR_RESET = const(3)
 # Bluetooth UUID of motor control service
 _CUSTOM_MOTOR_CONTROL_SERVICE_UUID = ubluetooth.UUID('1ab35ef6-b76b-11ea-b3de-0242ac130004')
 # Bluetooth characteristic UUID, properties
-_STATUS_UUID = ubluetooth.UUID('dac11e24-ba93-11ea-b3de-0242ac130004')
-_CUSTOM_STATUS_CHAR = (_STATUS_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
+
 
 # add descriptor for status
 
-_CUSTOM_STATUS_CHAR_DESCRIPTOR = ubluetooth.UUID(0x2901)
+_descriptor_string = 's'
+_encoded_string = int.from_bytes(_descriptor_string.encode(), 'big')
+_STATUS_CHAR_DESCRIPTOR_UUID = ubluetooth.UUID(0x2901)
+_STATUS_CHAR_DESCRIPTOR_VALUE = (_STATUS_CHAR_DESCRIPTOR_UUID, _encoded_string)
+
+_STATUS_UUID = ubluetooth.UUID('dac11e24-ba93-11ea-b3de-0242ac130004')
+_CUSTOM_STATUS_CHAR = (_STATUS_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ, (_STATUS_CHAR_DESCRIPTOR_VALUE,),)
+
 
 
 
@@ -60,7 +66,7 @@ _RESET_UUID = ubluetooth.UUID('36ca78c0-ca32-11ea-87d0-0242ac130003')
 _CUSTOM_DESIRED_RESET_CHAR = (_RESET_UUID, ubluetooth.FLAG_WRITE)
 
 # full definition of service
-_CUSTOM_MOTOR_CONTROL_SERVICE = (_CUSTOM_MOTOR_CONTROL_SERVICE_UUID, (_CUSTOM_STATUS_CHAR, _CUSTOM_DESIRED_SPEED_CHAR, _CUSTOM_DESIRED_DIREX_CHAR, _CUSTOM_DESIRED_RESET_CHAR,),)
+_CUSTOM_MOTOR_CONTROL_SERVICE = (_CUSTOM_MOTOR_CONTROL_SERVICE_UUID, (_CUSTOM_STATUS_CHAR,  _CUSTOM_DESIRED_SPEED_CHAR, _CUSTOM_DESIRED_DIREX_CHAR, _CUSTOM_DESIRED_RESET_CHAR,),)
 _SERVICE_LIST = (_CUSTOM_MOTOR_CONTROL_SERVICE,)
 
 _LED_CONN_SLEEP_TIME = const(170)
@@ -87,7 +93,11 @@ class mc_BLE:
 
 		if server_role:
 			# here, serv_ refers to server, not service
-			((self._server_status_value_handle, self._server_speed_value_handle, self._server_direx_value_handle, self._server_reset_value_handle),) = self._bl.gatts_register_services(_SERVICE_LIST)
+			((self._server_status_value_handle, 
+			self._server_status_descriptor_value_handle,
+			self._server_speed_value_handle, 
+			self._server_direx_value_handle, 
+			self._server_reset_value_handle),) = self._bl.gatts_register_services(_SERVICE_LIST)
 			self._attr_handle_dict = {BLE_ATTR_STATUS: self._server_status_value_handle, BLE_ATTR_SPEED: self._server_speed_value_handle, BLE_ATTR_DIREX: self._server_direx_value_handle, BLE_ATTR_RESET: self._server_reset_value_handle}
 			# peripheral (in this case, server) will advertise indefinitely until discovered by desired central
 			self.server_advertise()
@@ -307,6 +317,7 @@ class mc_BLE:
 	# API that causes BLE module to advertise - using ubluetooth lib, this locks it into server
 	# role once connection is made
 	def server_advertise(self):
+		# self._bl.gap_advertise(interval_us=40000, adv_data=_adv_encode_name('MC Server'), connectable=True)
 		self._bl.gap_advertise(interval_us=40000, adv_data=_adv_encode_name('MC Server'), connectable=True)
 
 	# internal method that stops peripheral (Server) from advertising
@@ -354,6 +365,9 @@ def adv_encode(adv_type, value):
 # encode name (str) as adv advertising packet
 def _adv_encode_name(name):
     return adv_encode(const(0x09), name.encode())
+
+def _adv_encode_shortened_name(name):
+	return adv_encode(const(0x08), name.encode())
 
 # print string of hex/ascii as sepated hex bytes
 def _print_as_readable_hex(data):
