@@ -45,6 +45,13 @@ _CUSTOM_MOTOR_CONTROL_SERVICE_UUID = ubluetooth.UUID('1ab35ef6-b76b-11ea-b3de-02
 # Bluetooth characteristic UUID, properties
 _STATUS_UUID = ubluetooth.UUID('dac11e24-ba93-11ea-b3de-0242ac130004')
 _CUSTOM_STATUS_CHAR = (_STATUS_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
+
+# add descriptor for status
+
+_CUSTOM_STATUS_CHAR_DESCRIPTOR = ubluetooth.UUID(0x2901)
+
+
+
 _DESIRED_SPEED_UUID = ubluetooth.UUID('a0ad58b2-b76c-11ea-b3de-0242ac130004')
 _CUSTOM_DESIRED_SPEED_CHAR = (_DESIRED_SPEED_UUID, ubluetooth.FLAG_WRITE | ubluetooth.FLAG_READ,)
 _DIREX_UUID = ubluetooth.UUID('c6f75c74-ba88-11ea-b3de-0242ac130004')
