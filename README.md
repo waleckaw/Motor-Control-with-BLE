@@ -4,7 +4,8 @@ Bluetooth Low Energy remote control for DC motor. Written in Python for 2x Espre
 
 Demo:
 -----
-Coming soon!
+
+[![Alt text](https://img.youtube.com/vi/jWYvNjDsq4A/0.jpg)](https://www.youtube.com/watch?v=jWYvNjDsq4A)
 
 Features:
 ---------
