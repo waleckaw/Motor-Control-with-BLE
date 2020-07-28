@@ -43,17 +43,18 @@ ampy --port **your port** put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
 	- Force Server Reset: 36ca78c0-ca32-11ea-87d0-0242ac130003
 
 
-Hardware:
+Setup:
 ---------
-
-#### Setup:
 
 <img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8885.JPG" width="500" height="375" />
 
-#### Schematic:
+Schematic:
+---------
 
 <img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/MC_BLE_schematic.png" width="600" height="350" />
 
+Hardware:
+---------
 
 #### MCU - [esp32-WROOM-32D](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf) - Purchase [here](https://www.amazon.com/gp/product/B07Q576VWZ/ref=ppx_yo_dt_b_asin_title_o07_s00?ie=UTF8&psc=1)
 <img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/doit-esp-wroom-32-devkit.jpg" width="370" height="290" />
@@ -64,7 +65,7 @@ Hardware:
 
 
 #### Motor Driver - [SN754410 Quadruple Half-H Driver](https://www.ti.com/lit/ds/symlink/sn754410.pdf)
-<img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/h-bridge-sn754410.jpg" width="360" height="210" />
+<img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/h-bridge-sn754410.jpg" width="360" height="230" />
 
 
 
