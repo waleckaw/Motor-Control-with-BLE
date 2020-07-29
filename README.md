@@ -40,7 +40,7 @@ ampy --port <YOUR_SERVER_PORT> put BLE_Class.py [then MC_Class.py, BLEMCServer.p
 ampy_import_files: (again, know your port name of the esp32)
 ```bash
 chmod +x ampy_import_files 
-bash ampy_import_files server
+bash ampy_import_files client
 ```
 
 ampy:
