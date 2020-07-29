@@ -22,14 +22,28 @@ Installation:
 - Load µPython onto Server esp32 board. See steps [here](https://learn.sparkfun.com/tutorials/how-to-load-micropython-on-a-microcontroller-board/esp32-thing)
 - Install [ampy](https://learn.sparkfun.com/tutorials/micropython-programming-tutorial-getting-started-with-the-esp32-thing/setup) - tool for uploading µPython files to esp32 and other boards running micropython
 - Clone this repo to your PC
-- **Server**: upload relevant .py files to board using ampy
+- **Server**: upload relevant .py files to board using ampy_import_files (if using Mac/Linux) or ampy (platform independent)
+ampy_import_files: (make sure you know the port name of the esp32 ahead of time)
 ```bash
-ampy --port **your port** put BLE_Class.py MC_Class.py BLEMCServer.py esp32_BLEProj_Server_boot/boot.py
+chmod +x ampy_import_files 
+bash ampy_import_files server
+```
+
+ampy:
+```bash
+ampy --port <YOUR_SERVER_PORT> put BLE_Class.py [then MC_Class.py, BLEMCServer.py, and esp32_BLEProj_Server_boot/boot.py one at a time]
 ```
 
 - If using another esp32 as client (see Demo), edit your local BLEMCClient and esp32_BLEProj_Client_boot/boot.py to your desire then upload to your Client esp32 using
+ampy_import_files: (again, know your port name of the esp32)
 ```bash
-ampy --port <YOUR_PORT> put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
+chmod +x ampy_import_files 
+bash ampy_import_files server
+```
+
+ampy:
+```bash
+ampy --port <YOUR_CLIENT_PORT> put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
 ```
 - Use terminal to access Client board, then use provided or custom libraries to control board
 
