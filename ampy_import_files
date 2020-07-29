@@ -1,0 +1,39 @@
+# !/user/bin/env bash
+
+# use ampy to upload all files onto either server or client
+
+read -p "Enter the name of your port to the esp32: " user_port
+
+if [ -z $user_port ]; then
+   echo "No port given. Try again."
+   exit 1
+fi
+
+if [ ! -e "$user_port" ]; then
+    echo "No port with that name. Try again."
+    exit 1
+fi
+
+shopt -s extglob
+
+if [ $1 = "server" ]; then
+    ls !(BLEMCClient).py
+    FILES=!(BLEMCClient).py
+    for f in $FILES
+    do
+        echo "putting $f"
+        ampy --port "$user_port" put "$f"
+        sleep 5 
+    done
+    ampy --port "$user_port" put esp32_BLEProj_Server_boot/boot.py
+elif [ $1 = "client" ]; then
+    declare -a FILES=( "BLE_Class.py" "BLEMCClient.py" "esp32_BLEProj_Client_boot/boot.py" )
+    for f in ${FILES[@]}
+    do
+        echo "putting $f"
+        ampy --port "$user_port" put "$f"
+        sleep 5
+    done
+else
+    echo "First (command line) argument must be server or client."
+fi

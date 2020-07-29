@@ -29,7 +29,7 @@ ampy --port **your port** put BLE_Class.py MC_Class.py BLEMCServer.py esp32_BLEP
 
 - If using another esp32 as client (see Demo), edit your local BLEMCClient and esp32_BLEProj_Client_boot/boot.py to your desire then upload to your Client esp32 using
 ```bash
-ampy --port **your port** put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
+ampy --port <YOUR_PORT> put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
 ```
 - Use terminal to access Client board, then use provided or custom libraries to control board
 
