@@ -1,12 +1,25 @@
-# IMPORTANT:
-# only compatible with certain unstable builds for esp32 that include ubluetooth
+'''*************************************************************************************
+
+ Module
+   BLE_Class.py
+ Revision
+   1.0.1
+ Description
+   This module implements the ubluetooth library to define an automatic connect-and-discover
+   sequence that occurs when the client and server are turned on and within range of each
+   other. Also provides API's for both client and server to access BLE characteristics.
+ Notes
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 6/25/20		WW      learn about Python and BLE
+
+************************************************************************************'''
+
+# IMPORTANT: only compatible with certain unstable builds for esp32 that include ubluetooth
 import ubluetooth
 import utime
-import struct
-import utime
-import ubinascii
 from machine import Pin
-
 from micropython import const
 
 # constants defining interrupt events from esp32 BLE module
@@ -53,7 +66,14 @@ _RESET_UUID = ubluetooth.UUID('36ca78c0-ca32-11ea-87d0-0242ac130003')
 _CUSTOM_DESIRED_RESET_CHAR = (_RESET_UUID, ubluetooth.FLAG_WRITE)
 
 # full definition of service
-_CUSTOM_MOTOR_CONTROL_SERVICE = (_CUSTOM_MOTOR_CONTROL_SERVICE_UUID, (_CUSTOM_STATUS_CHAR, _CUSTOM_DESIRED_SPEED_CHAR, _CUSTOM_DESIRED_DIREX_CHAR, _CUSTOM_DESIRED_RESET_CHAR,),)
+_CUSTOM_MOTOR_CONTROL_SERVICE = (
+	_CUSTOM_MOTOR_CONTROL_SERVICE_UUID, 
+	(_CUSTOM_STATUS_CHAR, 
+	_CUSTOM_DESIRED_SPEED_CHAR, 
+	_CUSTOM_DESIRED_DIREX_CHAR, 
+	_CUSTOM_DESIRED_RESET_CHAR,),
+	)
+
 _SERVICE_LIST = (_CUSTOM_MOTOR_CONTROL_SERVICE,)
 
 _LED_CONN_SLEEP_TIME = const(170)
@@ -75,13 +95,19 @@ class mc_BLE:
 		self._is_server=server_role
 		if server_role:
 			self._update_ready=False
-			self._attr_update_dict = {BLE_ATTR_STATUS: 0, BLE_ATTR_SPEED: 0, BLE_ATTR_DIREX: 0, BLE_ATTR_RESET: 0}
+			self._attr_update_dict = {BLE_ATTR_STATUS: 0, 
+									BLE_ATTR_SPEED: 0, 
+									BLE_ATTR_DIREX: 0, 
+									BLE_ATTR_RESET: 0}
 		self.get_info()
 
 		if server_role:
-			# here, serv_ refers to server, not service
 			((self._server_status_value_handle, self._server_speed_value_handle, self._server_direx_value_handle, self._server_reset_value_handle),) = self._bl.gatts_register_services(_SERVICE_LIST)
-			self._attr_handle_dict = {BLE_ATTR_STATUS: self._server_status_value_handle, BLE_ATTR_SPEED: self._server_speed_value_handle, BLE_ATTR_DIREX: self._server_direx_value_handle, BLE_ATTR_RESET: self._server_reset_value_handle}
+			#
+			self._attr_handle_dict = {BLE_ATTR_STATUS: self._server_status_value_handle, 
+									BLE_ATTR_SPEED: self._server_speed_value_handle, 
+									BLE_ATTR_DIREX: self._server_direx_value_handle, 
+									BLE_ATTR_RESET: self._server_reset_value_handle}
 			# peripheral (in this case, server) will advertise indefinitely until discovered by desired central
 			self.server_advertise()
 		else:
@@ -233,7 +259,9 @@ class mc_BLE:
 			print('permission denied')
 
 	# used to initialize server FWD direction as 1
-	def server_init_direx(self):
+	def server_init_characteristics(self):
+		self._bl.gatts_write(self._server_status_value_handle, b'\x00')
+		self._bl.gatts_write(self._server_speed_value_handle, b'\x00')
 		self._bl.gatts_write(self._server_direx_value_handle, b'\x01')
 
 	# client API command to write speed - takes integer between 30 and 70 (RPM)

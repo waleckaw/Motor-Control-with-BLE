@@ -1,7 +1,22 @@
-# Client - BLE/Motor Control Proj
-# Client lib automatically import as e to use from REPL. 
+'''*************************************************************************************
 
-#available methods to access motor include:
+ Module
+   BLEMCServer.py
+ Revision
+   1.0.1
+ Description
+   This module is meant for the user to implement the BLE_Class API
+   in order to either issue commands to the motor directly through the REPL
+   or to define sequences of motor commands
+ Notes
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 6/25/20		WW      learn about Python and BLE
+
+************************************************************************************'''
+
+#available API Class functions:
 
 # _e.client_write_speed(30) - input is int between 30 and 70 (rpm)
 # _e.client_read_speed() - prints current speed to terminal
@@ -9,7 +24,7 @@
 
 # _e.client_write_status(True) - turns on if True, off if False
 # _e.client_read_status() - prints status of motor to terminal as 1/0 (on/off)
-# speed initialized to 0, set to one when motor rotates
+# status initialized to 0, set to one when motor rotates
 
 # _e.client_write_direx(True) - input is True/False, depending on user circuit
 # _e.client_read_direx() - reads direx as 1/0
@@ -42,10 +57,10 @@ def switch_direx():
 		_e.client_write_direx(True)
 		gl_cmd_direction = True
 
-
 def reset_server():
 	_e.client_force_server_reset()
 
+#delay of 50 ms generally works best between BLE write operations
 def random_movement():
 	_e.client_write_status(False)
 	utime.sleep_ms(50)

@@ -20,7 +20,7 @@ Installation:
 ------
 - Download binary for esp32: [**esp32-idf3-20200616-unstable-v1.12-538-gb4d0d7bf0.bin**](https://micropython.org/download/esp32/)
 - Load µPython onto Server esp32 board. See steps [here](https://learn.sparkfun.com/tutorials/how-to-load-micropython-on-a-microcontroller-board/esp32-thing)
-- install [ampy](https://learn.sparkfun.com/tutorials/micropython-programming-tutorial-getting-started-with-the-esp32-thing/setup) - tool for uploading µPython files to esp32 and other boards running micropython
+- Install [ampy](https://learn.sparkfun.com/tutorials/micropython-programming-tutorial-getting-started-with-the-esp32-thing/setup) - tool for uploading µPython files to esp32 and other boards running micropython
 - Clone this repo to your PC
 - **Server**: upload relevant .py files to board using ampy
 ```bash
@@ -37,10 +37,18 @@ ampy --port **your port** put BLEMCClient.py esp32_BLEProj_Client_boot/boot.py
 
 - Download [Bluetility](https://github.com/jnross/Bluetility/releases) or another Third-Party BLE peripheral access interface
 - BLE Characteristics Value Handle:
-	- Status: dac11e24-ba93-11ea-b3de-0242ac130004
-	- Speed: a0ad58b2-b76c-11ea-b3de-0242ac130004
-	- Direction: c6f75c74-ba88-11ea-b3de-0242ac130004
-	- Force Server Reset: 36ca78c0-ca32-11ea-87d0-0242ac130003
+	- Status: 
+		- UUID = dac11e24-ba93-11ea-b3de-0242ac130004
+		- Hex: write 01 for active, 00 for disabled
+	- Speed: 
+		- UUID = a0ad58b2-b76c-11ea-b3de-0242ac130004
+		- Hex: write any value between 1E and 46 (Decimal: 30 and 70) to control RPM
+	- Direction: 
+		- UUID = c6f75c74-ba88-11ea-b3de-0242ac130004
+		- Hex: write 01 for CCW, 00 for CW (depending on your circuit)
+	- Force Server Reset: 
+		- UUID = 36ca78c0-ca32-11ea-87d0-0242ac130003
+		- Hex: write 01 to reset
 
 
 Setup:
@@ -61,7 +69,7 @@ Hardware:
 
 
 #### Motor - [25mm Geared Encoder Motor](https://forum.makeblock.com/t/information-about-25mm-dc-encoder-motor/10791)
-<img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8888.JPG" width="500" height="375" />
+<img src="https://github.com/waleckaw/esp32_BLE_MotorControl/blob/master/media/IMG_8888.JPG" width="400" height="300" />
 
 
 #### Motor Driver - [SN754410 Quadruple Half-H Driver](https://www.ti.com/lit/ds/symlink/sn754410.pdf)

@@ -1,12 +1,26 @@
-# cooperative scheduler class
+'''*************************************************************************************
 
-#import pyb
+ Module
+   WWsched.py
+ Revision
+   2.0
+ Description
+   This module provides a backbone for running multiple tasks with flag_lists and
+   _run functions. It allows the user to choose how often their tasks will run
+   and how often the scheduler will check for communication flags (analogous to
+   sys_tick_interval)
+ Notes
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 6/12/20		WW      create framework for running multiple tasks simultaneously
+
+************************************************************************************'''
+
 import utime
-#import uarray
 from machine import Timer
 from machine import Pin
 import micropython
-
 from micropython import const
 
 micropython.alloc_emergency_exception_buf(100)
@@ -95,6 +109,7 @@ class coopSched:
 		if _WW_DEBUG: print("callback dict:", self.flag_master_callback_ID_dict)
 
 	# checks flags every time sys clock reaches number of ms defined by sys_tick_interval
+	# run tasks if task-defined interval has expired since last call to _run
 	def run(self):
 
 		if _WW_DEBUG: print('task dict: ', self._task_dict)

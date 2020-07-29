@@ -1,4 +1,20 @@
-#esp32 pwm test
+'''*************************************************************************************
+
+ Module
+   WWsched.py
+ Revision
+   1.1
+ Description
+   This module implements a PI controller to drive the motor's speed and direction. It
+   also retains information while turned off, and (for example) will turn back on with
+   the same speed and direction unless changed during downtime
+ Notes
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 6/12/20		WW      Learn a little bit about motor control
+
+************************************************************************************'''
 
 from machine import Pin, PWM, Timer
 from micropython import const 
@@ -20,7 +36,7 @@ class MC:
 
 	# initialize Motor Controller - attributes include PWM frequency, PWM and direction pins to motor driver,
 	# interrupt pin to count encoder ticks, controller update interrupt timer, speed, target speed, and more
-	def __init__(self, freq=1500, DC=512):
+	def __init__(self, freq=1500):
 		self.frequency = freq
 		self._duty_cycle = 0
 		self._pwm = PWM(Pin(21), freq=self.frequency, duty=self._duty_cycle)
@@ -91,14 +107,14 @@ class MC:
 		if (self._control_active):
 			rpm_error = (self._target_speed - self.speed)
 			self._sum_error += rpm_error	
-			newDC = K_p * (rpm_error + (K_i * self._sum_error))
-			if (newDC > 1023):
-				newDC = 1023
+			new_DC = K_p * (rpm_error + (K_i * self._sum_error))
+			if (new_DC > 1023):
+				new_DC = 1023
 				self._sum_error -= rpm_error
-			elif (newDC < 0):
-				newDC = 0
+			elif (new_DC < 0):
+				new_DC = 0
 				self._sum_error -= rpm_error
-			newDCint = int(newDC)
-			self._duty_cycle=newDCint
-			self.set_DC(DC=newDCint)
+			new_DC_int = int(new_DC)
+			self._duty_cycle=new_DC_int
+			self.set_DC(DC=new_DC_int)
 

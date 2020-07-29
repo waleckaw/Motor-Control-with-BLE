@@ -1,4 +1,20 @@
-#Server - BLE/Motor Control Proj
+'''*************************************************************************************
+
+ Module
+   BLEMCServer.py
+ Revision
+   1.0.1
+ Description
+   This module implements WWsched to define the behavior of the BLE server, mainly in
+   terms of how it interprets commands from the client and sends them to the motor 
+   control module
+ Notes
+ History
+ When           Who     What/Why
+ -------------- ---     --------
+ 6/29/20		WW      learn about Python and BLE
+
+************************************************************************************'''
 
 import machine
 from machine import Pin
@@ -211,12 +227,11 @@ class BLETask:
 		#order of flags in flag_list must follow order of flag enumeration, so that flags can be set using flag ID's
 		self._flag_list = [BLE_connection_flag, update_status_flag, update_desired_speed_flag, update_direx_flag]
 		self._ble = mc_BLE(server_role=True)
-		self._ble.server_init_direx()
+		self._ble.server_init_characteristics()
 
-
-	# all tasks added must have a function called run
-	# BLETask operation - checks for connection to switch to connected state, then checks for BLE attribute updates
-	# (writes from client) and posts appropriate flag to be operated on by MCTask
+	# all tasks added to WWsched must have a function called _run
+	# BLETask operation - checks for connection to switch to connected state, then checks for 
+	# BLE attribute updates (writes from client) and posts appropriate flag to be operated on by MCTask
 	def _run(self):
 		if _WW_DEBUG: print('running BLETask')
 		if self._state == _BLESTATE_NOTCONNECTED:
